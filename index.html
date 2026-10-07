@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes économies</title>
+  <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2a7f62">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Économies">
+</head>
+<body>
+  <h1>Mes économies</h1>
+
+  <h2>Nouveau défi</h2>
+  <form id="formulaire-defi">
+    <label>Nom du défi :
+      <input type="text" id="nom-defi" placeholder="Ex : Paquet de cigarettes" required>
+    </label>
+    <label>Montant (€) :
+      <input type="number" id="montant-defi" step="0.01" min="0" placeholder="Ex : 12.50" required>
+    </label>
+    <label>Ajout automatique tous les ... jours (0 = désactivé) :
+      <input type="number" id="frequence-defi" min="0" step="1" value="0" required>
+    </label>
+    <button type="submit">Ajouter le défi</button>
+  </form>
+
+  <h2>Mes défis</h2>
+  <ul id="liste-defis"></ul>
+
+  <h2>Total épargné : <span id="total">0,00</span> €</h2>
+
+ <h2>Évolution</h2>
+  <canvas id="graphique"></canvas>
+  <p>Économisé depuis le début : <strong id="total-cumule">0,00 €</strong></p>
+
+  <details id="bloc-historique">
+    <summary>Historique (<span id="nb-historique">0</span>)</summary>
+    <div class="actions-historique">
+      <button id="bouton-archiver">Archiver</button>
+      <button id="bouton-vider" class="supprimer">Supprimer l'historique</button>
+    </div>
+    <ul id="liste-historique"></ul>
+  </details>
+
+  <details id="bloc-archives">
+    <summary>Archives (<span id="nb-archives">0</span>)</summary>
+    <div class="actions-historique">
+      <button id="bouton-vider-archives" class="supprimer">Supprimer les archives</button>
+    </div>
+    <ul id="liste-archives"></ul>
+  </details>
+
+  <script src="app.js"></script>
+</body>
+</html>

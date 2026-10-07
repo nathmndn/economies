@@ -1,0 +1,104 @@
+body {
+  font-family: Arial, sans-serif;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 16px;
+  background: #f4f7f6;
+  color: #222;
+}
+
+h1 {
+  color: #2a7f62;
+}
+
+form {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+label {
+  display: block;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin: 6px 0 12px;
+  box-sizing: border-box;
+}
+
+button {
+  background: #2a7f62;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  background: white;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+}
+
+li button {
+  margin-left: 8px;
+}
+
+li button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+li button.supprimer {
+  background: #b3402a;
+}
+
+#liste-historique li {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+button.supprimer {
+  background: #b3402a;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+details {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.actions-historique {
+  margin: 12px 0;
+}
+
+.actions-historique button {
+  margin-right: 8px;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+}
