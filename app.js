@@ -160,20 +160,27 @@ function afficherDefis() {
   defis.forEach(function (defi, index) {
     totalGeneral += defi.epargne;
 
-    let texte =
-      defi.nom + " (" + formaterMontant(defi.montant) + ") – épargné : " +
-      formaterMontant(defi.epargne);
+    let detail = formaterMontant(defi.montant) + " par dépense évitée";
     if (defi.frequence > 0) {
-      texte +=
-        " – auto : tous les " + defi.frequence +
+      detail += "\nAuto : tous les " + defi.frequence +
         " jour(s), prochain ajout le " + prochainAjout(defi);
     }
 
     const ligne = document.createElement("li");
-    ligne.textContent = texte;
+    ligne.className = "defi";
+    ligne.innerHTML =
+      '<div class="defi-tete"><strong></strong><span class="somme"></span></div>' +
+      '<p class="detail"></p>';
+    ligne.querySelector("strong").textContent = defi.nom;
+    ligne.querySelector(".somme").textContent = formaterMontant(defi.epargne);
+    ligne.querySelector(".detail").innerText = detail;
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
 
     const boutonEvite = document.createElement("button");
     boutonEvite.textContent = "Dépense évitée";
+    boutonEvite.className = "principal";
     boutonEvite.addEventListener("click", function () {
       defi.epargne = arrondir(defi.epargne + defi.montant);
       enregistrerEconomie(new Date(), defi.montant);
@@ -208,9 +215,10 @@ function afficherDefis() {
       }
     });
 
-    ligne.appendChild(boutonEvite);
-    ligne.appendChild(boutonRecuperer);
-    ligne.appendChild(boutonSupprimer);
+    actions.appendChild(boutonEvite);
+    actions.appendChild(boutonRecuperer);
+    actions.appendChild(boutonSupprimer);
+    ligne.appendChild(actions);
     liste.appendChild(ligne);
   });
 
@@ -325,7 +333,7 @@ function dessinerGraphique() {
   points.forEach(function (point, indice) {
     ctx.lineTo(posX(indice), posY(point.valeur));
   });
-  ctx.strokeStyle = "#2a7f62";
+  ctx.strokeStyle = "#0F3D5E";
   ctx.lineWidth = 2;
   ctx.stroke();
 
@@ -333,7 +341,7 @@ function dessinerGraphique() {
   ctx.lineTo(posX(points.length - 1), posY(0));
   ctx.lineTo(posX(0), posY(0));
   ctx.closePath();
-  ctx.fillStyle = "rgba(42, 127, 98, 0.15)";
+  ctx.fillStyle = "rgba(15, 61, 94, 0.12)";
   ctx.fill();
 
   // Un point sur la dernière valeur
@@ -343,7 +351,7 @@ function dessinerGraphique() {
     posY(points[points.length - 1].valeur),
     4, 0, Math.PI * 2
   );
-  ctx.fillStyle = "#2a7f62";
+  ctx.fillStyle = "#0F3D5E";
   ctx.fill();
 }
 
