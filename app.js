@@ -956,6 +956,22 @@ function afficherListeProfils() {
     const actions = document.createElement("div");
     actions.className = "actions";
 
+    // Bouton de réinitialisation du profil actif
+if (
+  profilActif &&
+  profil.id === profilActif.id
+) {
+  const boutonReinitialiser = document.createElement("button");
+  boutonReinitialiser.textContent = "Réinitialiser";
+  boutonReinitialiser.className = "supprimer";
+
+  boutonReinitialiser.addEventListener("click", function () {
+    afficherConfirmationReinitialisation(profil);
+  });
+
+  actions.appendChild(boutonReinitialiser);
+}
+
     // Bouton pour changer de profil
     if (
       !profilActif ||
@@ -1041,6 +1057,76 @@ formulaireProfil.addEventListener("submit", function (evenement) {
    */
   window.location.reload();
 });
+
+// ============================================================
+// POPUP DE CONFIRMATION DE RÉINITIALISATION
+// ============================================================
+
+function afficherConfirmationReinitialisation(profil) {
+
+  const fond = document.createElement("div");
+  fond.className = "popup-confirmation";
+
+  const panneau = document.createElement("div");
+  panneau.className = "popup-confirmation-panneau";
+
+  const titre = document.createElement("h2");
+  titre.textContent = "Réinitialiser le profil ?";
+
+  const message = document.createElement("p");
+  message.textContent =
+    "Toutes les données du profil « " +
+    profil.nom +
+    " » seront supprimées : défis, objectifs, historique, archives et économies.";
+
+  const avertissement = document.createElement("p");
+  avertissement.className = "popup-avertissement";
+  avertissement.textContent =
+    "Cette action est définitive.";
+
+  const actions = document.createElement("div");
+  actions.className = "popup-actions";
+
+  const boutonAnnuler = document.createElement("button");
+  boutonAnnuler.textContent = "Annuler";
+
+  const boutonConfirmer = document.createElement("button");
+  boutonConfirmer.textContent = "Réinitialiser";
+  boutonConfirmer.className = "supprimer";
+
+  boutonAnnuler.addEventListener("click", function () {
+    fond.remove();
+  });
+
+  boutonConfirmer.addEventListener("click", function () {
+
+    const reussi =
+      EconomiesProfils.reinitialiser(profil.id);
+
+    if (!reussi) {
+      fond.remove();
+      return;
+    }
+
+    /*
+     * Le profil reste le même.
+     * Seules ses données ont été vidées.
+     * On recharge l'application pour repartir proprement.
+     */
+    window.location.reload();
+  });
+
+  actions.appendChild(boutonAnnuler);
+  actions.appendChild(boutonConfirmer);
+
+  panneau.appendChild(titre);
+  panneau.appendChild(message);
+  panneau.appendChild(avertissement);
+  panneau.appendChild(actions);
+
+  fond.appendChild(panneau);
+  document.body.appendChild(fond);
+}
 
 // 10. Démarrage
 // Modèles de défis (montants moyens indicatifs, à ajuster)

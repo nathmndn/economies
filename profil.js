@@ -468,6 +468,23 @@ function migrerAnciennesDonnees() {
   }
 }
 
+// ============================================================
+// RÉINITIALISATION DES DONNÉES D'UN PROFIL
+// ============================================================
+
+function reinitialiserProfil(id) {
+  const profils = lireProfils();
+
+  if (!profils[id]) {
+    return false;
+  }
+
+  profils[id].donnees = copierDonnees(DONNEES_VIDES);
+
+  enregistrerProfils(profils);
+
+  return true;
+}
 
 // ============================================================
 // INTERFACE PUBLIQUE
@@ -492,6 +509,9 @@ window.EconomiesProfils = {
 
   supprimer:
     supprimerProfil,
+
+    reinitialiser:
+  reinitialiserProfil,
 
   lister:
     lireProfils
