@@ -34,6 +34,18 @@ const epargneConcretProchainValeur =
 const epargneConcretProchainMessage =
   document.getElementById("epargne-concret-prochain-message");
 
+const epargneConcretAutre1Nom =
+  document.getElementById("epargne-concret-autre-1-nom");
+
+const epargneConcretAutre1Valeur =
+  document.getElementById("epargne-concret-autre-1-valeur");
+
+const epargneConcretAutre2Nom =
+  document.getElementById("epargne-concret-autre-2-nom");
+
+const epargneConcretAutre2Valeur =
+  document.getElementById("epargne-concret-autre-2-valeur");
+
 // 2. Données sauvegardées du profil actif
 const donneesProfil = EconomiesProfils.charger();
 
@@ -808,20 +820,27 @@ function afficherEpargneConcret() {
   epargneConcretMontant.textContent =
     formaterMontant(somme);
 
-
-  // ----------------------------------------------------------
-  // Aucun montant économisé
-  // ----------------------------------------------------------
-
   if (somme <= 0) {
 
     epargneConcretMessage.textContent =
-      "Commence à économiser pour découvrir ce que ton épargne représente.";
+      "Commencez à économiser pour voir votre effort prendre forme.";
 
     epargneConcretReferenceNom.textContent =
-      "Ta première référence apparaîtra ici";
+      "Votre première référence apparaîtra ici";
 
     epargneConcretReferenceValeur.textContent =
+      "";
+
+    epargneConcretAutre1Nom.textContent =
+      "—";
+
+    epargneConcretAutre1Valeur.textContent =
+      "";
+
+    epargneConcretAutre2Nom.textContent =
+      "—";
+
+    epargneConcretAutre2Valeur.textContent =
       "";
 
     epargneConcretProchainValeur.textContent =
@@ -833,74 +852,125 @@ function afficherEpargneConcret() {
     return;
   }
 
+  const referencesGenerales =
+    REFERENCES_ECONOMIES.filter(function (reference) {
+      return reference.categorie !== "tabac";
+    });
 
-  // ----------------------------------------------------------
-  // Référence la plus proche
-  // ----------------------------------------------------------
+  const referencesClassees =
+    referencesGenerales
+      .map(function (reference) {
+        return {
+          reference: reference,
+          ecart: Math.abs(
+            somme - reference.valeur
+          )
+        };
+      })
+      .sort(function (a, b) {
+        return a.ecart - b.ecart;
+      })
+      .map(function (element) {
+        return element.reference;
+      });
 
-  const reference =
-    trouverReferenceProche(somme);
+  const referencePrincipale =
+    referencesClassees[0];
 
-  if (reference) {
+  const autresReferences =
+    referencesClassees.slice(1, 3);
 
-    const quantite =
-      Math.floor(somme / reference.valeur);
-
-    if (quantite >= 1) {
-
-      epargneConcretMessage.textContent =
-        "Cela représente environ " +
-        quantite +
-        " " +
-        reference.nom +
-        (quantite > 1 ? "s." : "") +
-        ".";
-
-    } else {
-
-      epargneConcretMessage.textContent =
-        "Tu te rapproches déjà de cette référence.";
-    }
-
+  if (referencePrincipale) {
 
     epargneConcretReferenceNom.textContent =
-      reference.nom;
+      referencePrincipale.nom;
 
     epargneConcretReferenceValeur.textContent =
       "Valeur indicative : " +
-      formaterMontant(reference.valeur);
+      formaterMontant(
+        referencePrincipale.valeur
+      );
   }
 
+  function afficherAutreReference(
+    reference,
+    elementNom,
+    elementValeur
+  ) {
 
-  // ----------------------------------------------------------
-  // Prochain palier
-  // ----------------------------------------------------------
+    if (!reference) {
+      elementNom.textContent = "—";
+      elementValeur.textContent = "";
+      return;
+    }
+
+    elementNom.textContent =
+      reference.nom;
+
+    const quantite =
+      Math.floor(
+        somme / reference.valeur
+      );
+
+    if (quantite >= 1) {
+      elementValeur.textContent =
+        "≈ " +
+        quantite +
+        " fois";
+    } else {
+      elementValeur.textContent =
+        "≈ " +
+        formaterMontant(
+          reference.valeur
+        );
+    }
+  }
+
+  afficherAutreReference(
+    autresReferences[0],
+    epargneConcretAutre1Nom,
+    epargneConcretAutre1Valeur
+  );
+
+  afficherAutreReference(
+    autresReferences[1],
+    epargneConcretAutre2Nom,
+    epargneConcretAutre2Valeur
+  );
 
   const prochaine =
-    trouverProchaineReference(somme);
+    referencesGenerales
+      .filter(function (reference) {
+        return reference.valeur > somme;
+      })
+      .sort(function (a, b) {
+        return a.valeur - b.valeur;
+      })[0];
 
   if (prochaine) {
 
     const reste =
-      arrondir(prochaine.valeur - somme);
+      arrondir(
+        prochaine.valeur - somme
+      );
 
     epargneConcretProchainValeur.textContent =
-      formaterMontant(prochaine.valeur);
+      formaterMontant(
+        prochaine.valeur
+      );
 
     epargneConcretProchainMessage.textContent =
       "Encore " +
       formaterMontant(reste) +
-      " pour atteindre environ " +
-      prochaine.nom +
-      ".";
+      " pour atteindre ce nouveau palier.";
 
   } else {
 
     epargneConcretProchainValeur.textContent =
-      "Tu as dépassé toutes les références actuelles.";
+      "Au-delà de 1 000 €";
 
     epargneConcretProchainMessage.textContent =
-      "De nouvelles références pourront être ajoutées prochainement.";
+      "Votre épargne dépasse déjà toutes nos références actuelles.";
   }
 }
 

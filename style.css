@@ -706,3 +706,350 @@ li.defi.pause .somme { color: var(--discret); }
     width: 100%;
   }
 }
+
+/* ============================================================
+   ÉPARGNE EN CONCRET
+   ============================================================ */
+
+.epargne-concret {
+  position: relative;
+  overflow: hidden;
+
+  margin: 24px 0 28px;
+  padding: 24px;
+
+  background: var(--carte);
+  color: var(--texte);
+
+  border: 1px solid var(--trait);
+  border-radius: 18px;
+
+  box-shadow: var(--ombre);
+
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+
+/* Petite ligne décorative */
+
+.epargne-concret::before {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+
+  height: 3px;
+
+  background: var(--soleil);
+  border-radius: 0 0 4px 4px;
+}
+
+
+/* ------------------------------------------------------------
+   EN-TÊTE
+   ------------------------------------------------------------ */
+
+.epargne-concret-entete {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-top: 8px;
+  padding-bottom: 20px;
+
+  border-bottom: 1px solid var(--trait);
+}
+
+
+.epargne-concret-sur-titre {
+  margin: 0 0 5px;
+
+  color: var(--discret);
+
+  font-size: 0.76rem;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+
+.epargne-concret-introduction {
+  margin: 0;
+
+  color: var(--discret);
+
+  font-size: 0.9rem;
+}
+
+
+.epargne-concret-montant {
+  flex-shrink: 0;
+
+  margin: 0;
+
+  color: var(--encre);
+
+  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-weight: 750;
+
+  line-height: 1;
+
+  letter-spacing: -0.04em;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ------------------------------------------------------------
+   CORPS
+   ------------------------------------------------------------ */
+
+.epargne-concret-corps {
+  padding-top: 20px;
+}
+
+
+/* ------------------------------------------------------------
+   RÉFÉRENCE PRINCIPALE
+   ------------------------------------------------------------ */
+
+.epargne-concret-reference-principale {
+  padding: 2px 0 20px;
+}
+
+
+.epargne-concret-label {
+  margin: 0 0 5px;
+
+  color: var(--discret);
+
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+
+.epargne-concret-reference-nom {
+  margin: 0;
+
+  color: var(--encre);
+
+  font-size: 1.45rem;
+  font-weight: 700;
+
+  line-height: 1.2;
+}
+
+
+.epargne-concret-reference-valeur {
+  margin: 4px 0 0;
+
+  color: var(--discret);
+
+  font-size: 0.8rem;
+}
+
+
+/* ------------------------------------------------------------
+   RÉFÉRENCES SECONDAIRES
+   ------------------------------------------------------------ */
+
+.epargne-concret-autres {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+
+.epargne-concret-autre {
+  min-width: 0;
+
+  padding: 13px 14px;
+
+  background: var(--fond);
+
+  border: 1px solid var(--trait);
+  border-radius: 12px;
+
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+
+.epargne-concret-autre span {
+  display: block;
+
+  overflow: hidden;
+
+  color: var(--texte);
+
+  font-size: 0.86rem;
+  font-weight: 600;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+.epargne-concret-autre strong {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--discret);
+
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+
+/* ------------------------------------------------------------
+   PROCHAIN PALIER
+   ------------------------------------------------------------ */
+
+.epargne-concret-prochain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-top: 17px;
+
+  border-top: 1px solid var(--trait);
+}
+
+
+.epargne-concret-prochain-titre {
+  margin: 0 0 3px;
+
+  color: var(--discret);
+
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+
+.epargne-concret-prochain-valeur {
+  margin: 0;
+
+  color: var(--texte);
+
+  font-size: 1.2rem;
+  font-weight: 700;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+.epargne-concret-prochain-message {
+  max-width: 250px;
+
+  margin: 0;
+
+  color: var(--discret);
+
+  font-size: 0.78rem;
+  line-height: 1.4;
+
+  text-align: right;
+}
+
+
+/* ------------------------------------------------------------
+   PETITE ANIMATION
+   ------------------------------------------------------------ */
+
+.epargne-concret-reference-principale {
+  animation: concret-apparition 0.5s ease both;
+}
+
+@keyframes concret-apparition {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------ */
+
+@media (max-width: 650px) {
+
+  .epargne-concret {
+    margin: 20px 0 24px;
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .epargne-concret::before {
+    left: 18px;
+    right: 18px;
+  }
+
+  .epargne-concret-entete {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .epargne-concret-montant {
+    font-size: 2.5rem;
+  }
+
+  .epargne-concret-reference-nom {
+    font-size: 1.35rem;
+  }
+
+  .epargne-concret-autres {
+    grid-template-columns: 1fr;
+  }
+
+  .epargne-concret-prochain {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .epargne-concret-prochain-message {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .epargne-concret-reference-principale {
+    animation: none;
+  }
+
+  .epargne-concret,
+  .epargne-concret-autre {
+    transition: none;
+  }
+}
