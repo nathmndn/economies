@@ -1132,7 +1132,6 @@ function dessinerOperations(conteneur, operations) {
     conteneur.appendChild(ligne);
   });
 }
-```js
 function afficherObjectifMensuel() {
   const carte = document.getElementById("objectif-mensuel-carte");
   const titre = document.getElementById("objectif-mensuel-titre");
@@ -1199,7 +1198,6 @@ function afficherObjectifMensuel() {
       "À économiser par semaine environ : " + formaterMontant(parSemaine);
   }
 }
-```
 
 function afficher() {
   afficherDefis();
@@ -1593,6 +1591,7 @@ const nomNouveauProfil = document.getElementById("nom-nouveau-profil");
 // ------------------------------------------------------------
 
 function afficherNomProfil() {
+  const profil = EconomiesProfils.getActif();
 
   if (profil) {
     nomProfil.textContent = profil.nom;
@@ -1600,7 +1599,6 @@ function afficherNomProfil() {
     nomProfil.textContent = "Mon profil";
   }
 }
-
 
 // ------------------------------------------------------------
 // Affichage de la liste des profils
@@ -1871,33 +1869,6 @@ formulaireProfil.addEventListener("submit", function (evenement) {
 
 fermerProfils.addEventListener("click", function () {
   fenetreProfils.hidden = true;
-});
-
-
-// ------------------------------------------------------------
-// Création d'un nouveau profil
-// ------------------------------------------------------------
-
-formulaireProfil.addEventListener("submit", function (evenement) {
-  evenement.preventDefault();
-
-  const nom = nomNouveauProfil.value.trim();
-
-  if (!nom) {
-    return;
-  }
-
-  const profil = EconomiesProfils.creer(nom);
-
-  if (!profil) {
-    return;
-  }
-
-  /*
-   * creerProfil() rend automatiquement le nouveau profil actif.
-   * On recharge donc l'application pour charger ses données vierges.
-   */
-  window.location.reload();
 });
 
 // ============================================================
@@ -2171,4 +2142,3 @@ function montrerAstuce() {
 
 montrerAstuce();
 setInterval(montrerAstuce, 9000);
-
