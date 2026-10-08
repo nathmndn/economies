@@ -70,6 +70,287 @@ function arrondir(nombre) {
   return Math.round(nombre * 100) / 100;
 }
 
+// ============================================================
+// 3 bis. RÉFÉRENCES CONCRÈTES DE L'ÉPARGNE
+// ============================================================
+//
+// Ces valeurs sont des ordres de grandeur.
+// Elles pourront être ajustées plus tard.
+//
+// Le but est de transformer une somme économisée
+// en quelque chose de concret et compréhensible.
+//
+// Aucun emoji ni aucune icône ne sont utilisés ici.
+// ============================================================
+
+const REFERENCES_ECONOMIES = [
+
+  // ----------------------------------------------------------
+  // TABAC
+  // ----------------------------------------------------------
+
+  {
+    nom: "paquet de cigarettes",
+    valeur: 12,
+    categorie: "tabac"
+  },
+
+  {
+    nom: "cartouche de cigarettes",
+    valeur: 120,
+    categorie: "tabac"
+  },
+
+
+  // ----------------------------------------------------------
+  // SORTIES ET LOISIRS
+  // ----------------------------------------------------------
+
+  {
+    nom: "place de cinéma",
+    valeur: 12,
+    categorie: "loisirs"
+  },
+
+  {
+    nom: "repas au restaurant",
+    valeur: 30,
+    categorie: "loisirs"
+  },
+
+  {
+    nom: "place de concert",
+    valeur: 50,
+    categorie: "loisirs"
+  },
+
+  {
+    nom: "jeu vidéo",
+    valeur: 80,
+    categorie: "loisirs"
+  },
+
+  {
+    nom: "activité de loisir",
+    valeur: 50,
+    categorie: "loisirs"
+  },
+
+
+  // ----------------------------------------------------------
+  // OBJETS
+  // ----------------------------------------------------------
+
+  {
+    nom: "livre",
+    valeur: 20,
+    categorie: "objets"
+  },
+
+  {
+    nom: "paire de chaussures",
+    valeur: 100,
+    categorie: "objets"
+  },
+
+  {
+    nom: "casque audio",
+    valeur: 150,
+    categorie: "objets"
+  },
+
+  {
+    nom: "petit appareil électronique",
+    valeur: 250,
+    categorie: "objets"
+  },
+
+
+  // ----------------------------------------------------------
+  // EXPÉRIENCES
+  // ----------------------------------------------------------
+
+  {
+    nom: "massage ou soin",
+    valeur: 70,
+    categorie: "experiences"
+  },
+
+  {
+    nom: "activité sportive",
+    valeur: 100,
+    categorie: "experiences"
+  },
+
+  {
+    nom: "saut en parapente",
+    valeur: 200,
+    categorie: "experiences"
+  },
+
+  {
+    nom: "journée dans un parc de loisirs",
+    valeur: 80,
+    categorie: "experiences"
+  },
+
+
+  // ----------------------------------------------------------
+  // VOYAGES ET SÉJOURS
+  // ----------------------------------------------------------
+
+  {
+    nom: "trajet en train",
+    valeur: 50,
+    categorie: "voyage"
+  },
+
+  {
+    nom: "nuit dans un hôtel",
+    valeur: 100,
+    categorie: "voyage"
+  },
+
+  {
+    nom: "week-end",
+    valeur: 300,
+    categorie: "voyage"
+  },
+
+  {
+    nom: "séjour",
+    valeur: 500,
+    categorie: "voyage"
+  },
+
+  {
+    nom: "voyage",
+    valeur: 1000,
+    categorie: "voyage"
+  },
+
+
+  // ----------------------------------------------------------
+  // MAISON / PROJETS
+  // ----------------------------------------------------------
+
+  {
+    nom: "petit équipement pour la maison",
+    valeur: 50,
+    categorie: "maison"
+  },
+
+  {
+    nom: "équipement pour la maison",
+    valeur: 150,
+    categorie: "maison"
+  },
+
+  {
+    nom: "meuble",
+    valeur: 300,
+    categorie: "maison"
+  }
+
+];
+
+
+// ------------------------------------------------------------
+// Retourne la référence la plus proche d'un montant.
+// ------------------------------------------------------------
+
+function trouverReferenceProche(montant) {
+
+  if (
+    montant <= 0 ||
+    REFERENCES_ECONOMIES.length === 0
+  ) {
+    return null;
+  }
+
+  let meilleureReference = null;
+  let meilleurEcart = Infinity;
+
+  REFERENCES_ECONOMIES.forEach(function (reference) {
+
+    const ecart =
+      Math.abs(montant - reference.valeur);
+
+    if (ecart < meilleurEcart) {
+      meilleurEcart = ecart;
+      meilleureReference = reference;
+    }
+
+  });
+
+  return meilleureReference;
+}
+
+
+// ------------------------------------------------------------
+// Retourne les références qui peuvent être atteintes
+// avec une somme donnée.
+//
+// Exemple : 200 € pourra renvoyer plusieurs références
+// proches de cette somme.
+// ------------------------------------------------------------
+
+function trouverReferencesProches(
+  montant,
+  nombre = 3
+) {
+
+  if (
+    montant <= 0 ||
+    REFERENCES_ECONOMIES.length === 0
+  ) {
+    return [];
+  }
+
+  return REFERENCES_ECONOMIES
+    .map(function (reference) {
+
+      return {
+        reference: reference,
+        ecart: Math.abs(
+          montant - reference.valeur
+        )
+      };
+
+    })
+    .sort(function (a, b) {
+      return a.ecart - b.ecart;
+    })
+    .slice(0, nombre)
+    .map(function (element) {
+      return element.reference;
+    });
+}
+
+
+// ------------------------------------------------------------
+// Retourne la prochaine référence supérieure au montant.
+//
+// Exemple :
+// 180 € → 200 € : saut en parapente
+// ------------------------------------------------------------
+
+function trouverProchaineReference(montant) {
+
+  const references =
+    REFERENCES_ECONOMIES
+      .filter(function (reference) {
+        return reference.valeur > montant;
+      })
+      .sort(function (a, b) {
+        return a.valeur - b.valeur;
+      });
+
+  return references.length > 0
+    ? references[0]
+    : null;
+}
+
 // Transforme une date en numéro de jour (pour compter les jours entiers)
 function numeroJour(date) {
   return Math.floor(
