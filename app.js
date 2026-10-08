@@ -15,21 +15,14 @@ const boutonArchiver = document.getElementById("bouton-archiver");
 const boutonVider = document.getElementById("bouton-vider");
 const boutonViderArchives = document.getElementById("bouton-vider-archives");
 
-// 2. Données sauvegardées
-// Profil actuellement utilisé
-let profilActif = getProfilActif();
-
-if (!profilActif) {
-  profilActif = creerProfil("Mon profil");
-}
-
-let donneesProfil = profilActif.donnees;
+// 2. Données sauvegardées du profil actif
+const donneesProfil = EconomiesProfils.charger();
 
 let defis = donneesProfil.defis || [];
 let historique = donneesProfil.historique || [];
 let archives = donneesProfil.archives || [];
 let objectifs = donneesProfil.objectifs || [];
-let economiesParJour = donneesProfil.economiesParJour || {};
+let economiesParJour = donneesProfil.economiesParJour;
 
 // Mise à niveau des défis créés avant l'accumulation automatique
 defis.forEach(function (defi) {
@@ -59,27 +52,13 @@ if (economiesParJour === null) {
 }
 
 function sauvegarder() {
- function sauvegarder() {
-  const profils = lireProfils();
-
-  if (!profilActif || !profils[profilActif.id]) {
-    return;
-  }
-
-  profils[profilActif.id].donnees = {
+  EconomiesProfils.sauvegarder({
     defis: defis,
     historique: historique,
     archives: archives,
     economiesParJour: economiesParJour,
     objectifs: objectifs
-  };
-
-  profils[profilActif.id].nom = profilActif.nom;
-
-  enregistrerProfils(profils);
-
-  profilActif = profils[profilActif.id];
-}
+  });
 }
 
 // 3. Petites fonctions utiles
@@ -1115,128 +1094,3 @@ function montrerAstuce() {
 montrerAstuce();
 setInterval(montrerAstuce, 9000);
 
-// Gestion de l'interface des profils
-
-const boutonProfil = document.getElementById("bouton-profil");
-const nomProfil = document.getElementById("nom-profil");
-const fenetreProfils = document.getElementById("fenetre-profils");
-const fermerProfils = document.getElementById("fermer-profils");
-const listeProfils = document.getElementById("liste-profils");
-const formulaireProfil = document.getElementById("formulaire-profil");
-const nomNouveauProfil = document.getElementById("nom-nouveau-profil");
-
-function afficherNomProfil() {
-  const profil = getProfilActif();
-
-  if (profil) {
-    nomProfil.textContent = profil.nom;
-  }
-}
-
-function afficherListeProfils() {
-  const profils = lireProfils();
-
-  listeProfils.innerHTML = "";
-
-  Object.values(profils).forEach(function (profil) {
-
-    const ligne = document.createElement("div");
-    ligne.className = "profil-ligne";
-
-    const informations = document.createElement("div");
-
-    const nom = document.createElement("strong");
-    nom.textContent = profil.nom;
-
-    informations.appendChild(nom);
-
-    if (profil.id === profilActif.id) {
-      const actif = document.createElement("span");
-      actif.textContent = "Profil actuel";
-      actif.className = "profil-actif";
-      informations.appendChild(actif);
-    }
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-
-    if (profil.id !== profilActif.id) {
-      const boutonUtiliser = document.createElement("button");
-      boutonUtiliser.textContent = "Utiliser";
-
-      boutonUtiliser.addEventListener("click", function () {
-        definirProfilActif(profil.id);
-
-        // Recharge l'application avec les données du nouveau profil.
-        window.location.reload();
-      });
-
-      actions.appendChild(boutonUtiliser);
-    }
-
-    const boutonSupprimer = document.createElement("button");
-    boutonSupprimer.textContent = "Supprimer";
-    boutonSupprimer.className = "supprimer";
-
-    boutonSupprimer.addEventListener("click", function () {
-
-      const nombreProfils = Object.keys(lireProfils()).length;
-
-      if (nombreProfils <= 1) {
-        alert("Tu dois conserver au moins un profil.");
-        return;
-      }
-
-      if (
-        confirm(
-          "Supprimer définitivement le profil « " +
-          profil.nom +
-          " » et toutes ses données ?"
-        )
-      ) {
-        supprimerProfil(profil.id);
-        window.location.reload();
-      }
-    });
-
-    actions.appendChild(boutonSupprimer);
-
-    ligne.append(informations, actions);
-    listeProfils.appendChild(ligne);
-  });
-}
-
-function ouvrirProfils() {
-  afficherListeProfils();
-  fenetreProfils.hidden = false;
-  nomNouveauProfil.focus();
-}
-
-function fermerFenetreProfils() {
-  fenetreProfils.hidden = true;
-}
-
-boutonProfil.addEventListener("click", ouvrirProfils);
-fermerProfils.addEventListener("click", fermerFenetreProfils);
-
-fenetreProfils.addEventListener("click", function (evenement) {
-  if (evenement.target === fenetreProfils) {
-    fermerFenetreProfils();
-  }
-});
-
-formulaireProfil.addEventListener("submit", function (evenement) {
-  evenement.preventDefault();
-
-  const nom = nomNouveauProfil.value.trim();
-
-  if (!nom) {
-    return;
-  }
-
-  creerProfil(nom);
-
-  window.location.reload();
-});
-
-afficherNomProfil();
