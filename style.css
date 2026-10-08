@@ -1213,8 +1213,6 @@ li.defi.pause .somme { color: var(--discret); }
 }
 
 
-/* Animation discrète lors du franchissement d'un palier */
-
 /* Animation plus ample lors du franchissement d'un palier */
 .epargne-concret-prochain.palier-franchi {
   animation: animation-palier 1.5s ease-in-out;
@@ -1252,4 +1250,296 @@ li.defi.pause .somme { color: var(--discret); }
   .epargne-concret-prochain.palier-franchi {
     animation: none;
   }
+}
+
+/* ANIMATION DISCRÈTE AU FRANCHISSEMENT D'UN PALIER */
+
+.epargne-concret-prochain.palier-franchi {
+  animation: animation-palier-franchi 700ms ease-out;
+  transform-origin: center;
+}
+
+@keyframes animation-palier-franchi {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(90, 140, 190, 0);
+  }
+
+  35% {
+    transform: scale(1.015);
+    box-shadow: 0 0 0 4px rgba(90, 140, 190, 0.22);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(90, 140, 190, 0);
+  }
+}
+
+/* Respect des préférences de réduction des animations */
+@media (prefers-reduced-motion: reduce) {
+  .epargne-concret-prochain.palier-franchi {
+    animation: none;
+  }
+}
+
+
+/* Création de profil en trois étapes */
+.formulaire-profil-etapes {
+  display: block;
+  margin-top: 20px;
+}
+
+.etape-profil[hidden] {
+  display: none !important;
+}
+
+.etape-profil {
+  padding-top: 8px;
+}
+
+.etape-profil h3 {
+  margin: 8px 0;
+}
+
+.etape-profil-indication {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.etape-profil > p {
+  line-height: 1.5;
+}
+
+.formulaire-profil-etapes label:not(.option-style-epargne) {
+  display: block;
+  margin: 14px 0 6px;
+}
+
+.formulaire-profil-etapes input[type="text"],
+.formulaire-profil-etapes input[type="number"] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--couleur-bordure, #ccc);
+  border-radius: 8px;
+  background: var(--couleur-fond, #fff);
+  color: var(--couleur-texte, #222);
+  font: inherit;
+}
+
+.choix-style-epargne {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.option-style-epargne {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--couleur-bordure, #ccc);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.option-style-epargne:has(input:checked) {
+  border-color: var(--couleur-principale, #477b63);
+  box-shadow: 0 0 0 1px var(--couleur-principale, #477b63);
+}
+
+.option-style-epargne input[type="radio"] {
+  flex-shrink: 0;
+  margin-top: 4px;
+  accent-color: var(--couleur-principale, #477b63);
+}
+
+.option-style-epargne > span {
+  display: grid;
+  gap: 5px;
+  line-height: 1.4;
+}
+
+.option-style-epargne .style-pourcentage {
+  font-weight: 600;
+}
+
+.objectif-mensuel-profil {
+  margin: 18px 0 12px;
+  padding: 16px;
+  border: 1px solid var(--couleur-bordure, #ccc);
+  border-radius: 10px;
+}
+
+.objectif-mensuel-profil p {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.objectif-mensuel-profil strong {
+  display: block;
+  margin: 8px 0;
+  font-size: 1.8rem;
+  overflow-wrap: anywhere;
+}
+
+.note-objectif-profil {
+  font-size: 0.88rem;
+  opacity: 0.8;
+}
+
+.actions-profil-etapes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.actions-profil-etapes button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .actions-profil-etapes button {
+    flex: 1 1 auto;
+  }
+
+  .option-style-epargne {
+    padding: 11px;
+  }
+}
+
+
+/* Corriger la taille des cartes de choix d'épargne */
+.choix-style-epargne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.formulaire-profil-etapes .option-style-epargne {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.formulaire-profil-etapes .option-style-epargne input[type="radio"] {
+  flex: 0 0 16px;
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+}
+
+.formulaire-profil-etapes .option-style-epargne > span {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.formulaire-profil-etapes .option-style-epargne > span > span {
+  line-height: 1.35;
+}
+
+/* Limiter la hauteur de la fenêtre sur les écrans d'ordinateur */
+@media (min-width: 600px) {
+  #fenetre-profils .profil-panneau {
+    box-sizing: border-box;
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+}
+
+/* Objectif mensuel sur le tableau de bord */
+.objectif-mensuel-dashboard {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--trait);
+  border-radius: 14px;
+  color: inherit;
+  background: transparent;
+}
+
+.objectif-mensuel-dashboard h2 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+}
+
+.objectif-mensuel-dashboard p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.objectif-mensuel-cible,
+.objectif-mensuel-epargne {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.objectif-mensuel-piste {
+  width: 100%;
+  height: 10px;
+  margin: 14px 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--trait);
+}
+
+.objectif-mensuel-barre {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+#objectif-mensuel-reste {
+  font-weight: 600;
+}
+
+#objectif-mensuel-semaine {
+  color: var(--discret);
+  font-size: 0.92rem;
+}
+
+@media (min-width: 900px) {
+  .objectif-mensuel-dashboard {
+    max-width: 520px;
+  }
+}
+
+/* Carte de clôture du tableau de bord */
+.objectif-mensuel-dashboard {
+  margin: 32px 0 16px;
+  padding: 24px;
+  border: 1px solid var(--trait);
+  border-top: 3px solid var(--accent);
+  border-radius: 14px;
+}
+
+.objectif-mensuel-dashboard h2 {
+  margin-bottom: 18px;
+}
+
+.objectif-mensuel-piste {
+  margin: 18px 0;
 }

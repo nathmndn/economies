@@ -1132,12 +1132,81 @@ function dessinerOperations(conteneur, operations) {
     conteneur.appendChild(ligne);
   });
 }
+```js
+function afficherObjectifMensuel() {
+  const carte = document.getElementById("objectif-mensuel-carte");
+  const titre = document.getElementById("objectif-mensuel-titre");
+  const progression = document.getElementById("objectif-mensuel-progression");
+  const barre = document.getElementById("objectif-mensuel-barre");
+  const piste = document.getElementById("objectif-mensuel-piste");
+  const reste = document.getElementById("objectif-mensuel-reste");
+  const semaine = document.getElementById("objectif-mensuel-semaine");
+
+  if (!carte || !titre || !progression || !barre || !piste || !reste || !semaine) {
+    return;
+  }
+
+  const profil = EconomiesProfils.getActif();
+  const objectif = Number(profil?.objectifMensuel) || 0;
+
+  if (objectif <= 0) {
+    titre.textContent = "Non défini";
+    progression.textContent = "0,00 €";
+    barre.style.width = "0%";
+    piste.setAttribute("aria-valuenow", "0");
+    reste.textContent = "L’objectif mensuel n’est pas défini pour ce profil.";
+    semaine.textContent = "Configure un objectif mensuel pour suivre ta progression.";
+    return;
+  }
+
+  const maintenant = new Date();
+  const prefixeMois = cleDate(maintenant).slice(0, 7) + "-";
+  let totalMois = 0;
+
+  Object.keys(economiesParJour || {}).forEach(function (date) {
+    if (date.startsWith(prefixeMois)) {
+      totalMois += Number(economiesParJour[date]) || 0;
+    }
+  });
+
+  totalMois = Math.max(0, arrondir(totalMois));
+
+  const montantRestant = Math.max(0, arrondir(objectif - totalMois));
+  const pourcentage = Math.min(100, Math.max(0, Math.floor((totalMois / objectif) * 100)));
+
+  const dernierJour = new Date(
+    maintenant.getFullYear(),
+    maintenant.getMonth() + 1,
+    0
+  ).getDate();
+
+  const joursRestants = dernierJour - maintenant.getDate() + 1;
+  const semainesRestantes = Math.max(1, Math.ceil(joursRestants / 7));
+  const parSemaine = arrondir(montantRestant / semainesRestantes);
+
+  titre.textContent = formaterMontant(objectif);
+  progression.textContent = formaterMontant(totalMois);
+  barre.style.width = pourcentage + "%";
+  piste.setAttribute("aria-valuenow", String(pourcentage));
+  piste.setAttribute("aria-valuetext", pourcentage + " % de l’objectif atteint");
+
+  if (montantRestant === 0) {
+    reste.textContent = "Objectif mensuel atteint !";
+    semaine.textContent = "Tu as atteint ton objectif pour ce mois.";
+  } else {
+    reste.textContent = "Montant restant : " + formaterMontant(montantRestant);
+    semaine.textContent =
+      "À économiser par semaine environ : " + formaterMontant(parSemaine);
+  }
+}
+```
 
 function afficher() {
   afficherDefis();
   afficherObjectifs();
   afficherTotalCumule();
   afficherEpargneConcret();
+  afficherObjectifMensuel();
   dessinerGraphique();
   dessinerOperations(listeHistorique, historique);
   dessinerOperations(listeArchives, archives);
@@ -1524,7 +1593,6 @@ const nomNouveauProfil = document.getElementById("nom-nouveau-profil");
 // ------------------------------------------------------------
 
 function afficherNomProfil() {
-  const profil = EconomiesProfils.getActif();
 
   if (profil) {
     nomProfil.textContent = profil.nom;
@@ -1628,11 +1696,172 @@ if (
 // Ouverture de la fenêtre
 // ------------------------------------------------------------
 
+function afficherEtapeProfil(numero) {
+  formulaireProfil.querySelectorAll(".etape-profil").forEach(function (etape) {
+    etape.hidden = Number(etape.dataset.etape) !== numero;
+  });
+}
+
+function obtenirStyleEpargne() {
+  const selection = formulaireProfil.querySelector(
+    'input[name="style-epargne"]:checked'
+  );
+
+  if (!selection) return null;
+
+  const styles = {
+    econoficace: { nom: "Éconoficace", pourcentage: 35 },
+    economedium: { nom: "Économedium", pourcentage: 20 },
+    "petit-econome": { nom: "Petit économe", pourcentage: 10 }
+  };
+
+  return styles[selection.value] || null;
+}
+
+function mettreAJourObjectifProfil() {
+  const revenu = Number(
+    document.getElementById("revenu-mensuel-profil").value
+  );
+  const style = obtenirStyleEpargne();
+  const montantObjectif = document.getElementById("montant-objectif-profil");
+  const detailObjectif = document.getElementById("detail-objectif-profil");
+
+  if (!style || !Number.isFinite(revenu) || revenu <= 0) {
+    montantObjectif.textContent = "—";
+    detailObjectif.textContent =
+      "Choisissez un style et saisissez votre revenu pour calculer votre objectif.";
+    return;
+  }
+
+  const objectif = Math.round(revenu * style.pourcentage) / 100;
+
+  montantObjectif.textContent = formaterMontant(objectif);
+  detailObjectif.textContent =
+    style.pourcentage + " % de " + formaterMontant(revenu) + " par mois.";
+}
+
+// Ouverture et fermeture de la fenêtre des profils
 boutonProfil.addEventListener("click", function () {
   afficherNomProfil();
   afficherListeProfils();
-
+  afficherEtapeProfil(1);
   fenetreProfils.hidden = false;
+});
+
+fermerProfils.addEventListener("click", function () {
+  fenetreProfils.hidden = true;
+});
+
+// Annulation de la création
+document
+  .getElementById("annuler-creation-profil")
+  .addEventListener("click", function () {
+    formulaireProfil.reset();
+    afficherEtapeProfil(1);
+    mettreAJourObjectifProfil();
+    fenetreProfils.hidden = true;
+  });
+
+// Étape 1 : vérifier le nom et passer au choix du style
+document
+  .getElementById("suivant-profil-1")
+  .addEventListener("click", function () {
+    if (!nomNouveauProfil.value.trim()) {
+      nomNouveauProfil.setCustomValidity("Saisissez un nom de profil.");
+      nomNouveauProfil.reportValidity();
+      nomNouveauProfil.addEventListener(
+        "input",
+        function () {
+          nomNouveauProfil.setCustomValidity("");
+        },
+        { once: true }
+      );
+      return;
+    }
+
+    nomNouveauProfil.setCustomValidity("");
+    afficherEtapeProfil(2);
+  });
+
+// Étape 2 : vérifier le style et passer au revenu
+document
+  .getElementById("suivant-profil-2")
+  .addEventListener("click", function () {
+    if (!obtenirStyleEpargne()) {
+      alert("Choisissez un style d’épargne pour continuer.");
+      return;
+    }
+
+    afficherEtapeProfil(3);
+    mettreAJourObjectifProfil();
+  });
+
+// Boutons de retour
+document
+  .getElementById("precedent-profil-2")
+  .addEventListener("click", function () {
+    afficherEtapeProfil(1);
+  });
+
+document
+  .getElementById("precedent-profil-3")
+  .addEventListener("click", function () {
+    afficherEtapeProfil(2);
+  });
+
+// Mise à jour du calcul en direct
+document
+  .getElementById("revenu-mensuel-profil")
+  .addEventListener("input", mettreAJourObjectifProfil);
+
+formulaireProfil
+  .querySelectorAll('input[name="style-epargne"]')
+  .forEach(function (radio) {
+    radio.addEventListener("change", mettreAJourObjectifProfil);
+  });
+
+// Étape 3 : créer le profil avec ses paramètres d’épargne
+formulaireProfil.addEventListener("submit", function (evenement) {
+  evenement.preventDefault();
+
+  const nom = nomNouveauProfil.value.trim();
+  const styleSelectionne = formulaireProfil.querySelector(
+    'input[name="style-epargne"]:checked'
+  );
+  const style = obtenirStyleEpargne();
+  const champRevenu = document.getElementById("revenu-mensuel-profil");
+  const revenu = Number(champRevenu.value);
+
+  if (!nom) {
+    afficherEtapeProfil(1);
+    nomNouveauProfil.focus();
+    return;
+  }
+
+  if (!styleSelectionne || !style) {
+    afficherEtapeProfil(2);
+    alert("Choisissez un style d’épargne pour continuer.");
+    return;
+  }
+
+  if (!champRevenu.checkValidity() || !Number.isFinite(revenu) || revenu <= 0) {
+    champRevenu.reportValidity();
+    return;
+  }
+
+  const objectifMensuel =
+    Math.round(revenu * style.pourcentage) / 100;
+
+  const profil = EconomiesProfils.creer(nom, {
+    typeEpargne: styleSelectionne.value,
+    revenuMensuel: revenu,
+    pourcentageEpargne: style.pourcentage,
+    objectifMensuel: objectifMensuel
+  });
+
+  if (!profil) return;
+
+  window.location.reload();
 });
 
 

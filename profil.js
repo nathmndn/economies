@@ -125,46 +125,51 @@ function getProfilActif() {
 // CRÉATION
 // ============================================================
 
-function creerProfil(nom) {
 
-  nom =
-    String(nom || "")
-      .trim();
+function creerProfil(nom, options = {}) {
+  nom = String(nom || "").trim();
+  if (!nom) return null;
 
-  if (!nom) {
-    return null;
-  }
+  const profils = lireProfils();
+  const id = creerIdProfil();
 
-  const profils =
-    lireProfils();
-
-  const id =
-    creerIdProfil();
-
-  const profil = {
-    id: id,
-
-    nom: nom,
-
-    dateCreation:
-      new Date().toISOString(),
-
-    donnees:
-      copierDonnees(
-        DONNEES_VIDES
-      )
+  const stylesAutorises = {
+    econoficace: 35,
+    economedium: 20,
+    "petit-econome": 10
   };
 
-  profils[id] =
-    profil;
+  const typeEpargne = stylesAutorises[options.typeEpargne]
+    ? options.typeEpargne
+    : null;
 
-  enregistrerProfils(
-    profils
-  );
+  const pourcentageEpargne = typeEpargne
+    ? stylesAutorises[typeEpargne]
+    : null;
 
-  definirProfilActif(
-    id
-  );
+  const revenu = Number(options.revenuMensuel);
+  const revenuMensuel =
+    Number.isFinite(revenu) && revenu > 0 ? revenu : null;
+
+  const objectifMensuel =
+    revenuMensuel !== null && pourcentageEpargne !== null
+      ? Math.round(revenuMensuel * pourcentageEpargne) / 100
+      : null;
+
+  const profil = {
+    id,
+    nom,
+    dateCreation: new Date().toISOString(),
+    typeEpargne,
+    revenuMensuel,
+    pourcentageEpargne,
+    objectifMensuel,
+    donnees: copierDonnees(DONNEES_VIDES)
+  };
+
+  profils[id] = profil;
+  enregistrerProfils(profils);
+  definirProfilActif(id);
 
   return profil;
 }

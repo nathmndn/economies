@@ -34,6 +34,8 @@
       <p class="astuce-auteur" id="astuce-auteur"></p>
       <div class="astuce-barre"><span></span></div>
     </div>
+
+
 <div class="actions-profil">
   <button id="bouton-profil" class="theme">
     👤 <span id="nom-profil">Mon profil</span>
@@ -202,6 +204,33 @@
         <ul id="liste-archives"></ul>
       </details>
     </section>
+    <div class="objectif-mensuel-dashboard" id="objectif-mensuel-carte">
+  <h2>Mon objectif du mois</h2>
+
+  <p class="objectif-mensuel-cible">
+    Objectif : <strong id="objectif-mensuel-titre">—</strong>
+  </p>
+
+  <p class="objectif-mensuel-epargne">
+    Économisé ce mois-ci :
+    <strong id="objectif-mensuel-progression">0,00 €</strong>
+  </p>
+
+  <div
+    class="objectif-mensuel-piste"
+    role="progressbar"
+    aria-label="Progression de l'objectif mensuel"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="0"
+    id="objectif-mensuel-piste"
+  >
+    <div class="objectif-mensuel-barre" id="objectif-mensuel-barre"></div>
+  </div>
+
+  <p id="objectif-mensuel-reste">Montant restant : —</p>
+  <p id="objectif-mensuel-semaine">Suggestion par semaine : —</p>
+</div>
   </main>
 
 <div id="fenetre-profils" class="fenetre-profils" hidden>
@@ -214,22 +243,138 @@
 
     <div id="liste-profils"></div>
 
-    <form id="formulaire-profil" class="formulaire-profil">
-      <label>
-        Nouveau profil
+<form id="formulaire-profil" class="formulaire-profil formulaire-profil-etapes">
+
+  <!-- Étape 1 : nom du profil -->
+  <div class="etape-profil" data-etape="1">
+    <p class="etape-profil-indication">Étape 1 sur 3</p>
+    <h3>Créer votre profil</h3>
+    <p>Choisissez un nom pour personnaliser votre espace d'épargne.</p>
+
+    <label for="nom-nouveau-profil">Nom du profil</label>
+    <input
+      type="text"
+      id="nom-nouveau-profil"
+      placeholder="Ex. : Marie"
+      maxlength="40"
+      autocomplete="name"
+      required
+    >
+
+    <div class="actions-profil-etapes">
+      <button type="button" id="annuler-creation-profil">
+        Annuler
+      </button>
+      <button type="button" id="suivant-profil-1" class="principal">
+        Continuer
+      </button>
+    </div>
+  </div>
+
+  <!-- Étape 2 : choix du style d'épargne -->
+  <div class="etape-profil" data-etape="2" hidden>
+    <p class="etape-profil-indication">Étape 2 sur 3</p>
+    <h3>Quel est votre objectif d'épargne ?</h3>
+    <p>Choisissez le rythme qui vous semble adapté à votre budget.</p>
+
+    <div class="choix-style-epargne">
+
+      <label class="option-style-epargne">
         <input
-          type="text"
-          id="nom-nouveau-profil"
-          placeholder="Ex : Marie"
-          maxlength="40"
+          type="radio"
+          name="style-epargne"
+          value="econoficace"
           required
         >
+        <span>
+          <strong>Éconoficace</strong>
+          <span class="style-pourcentage">35 % des revenus</span>
+          <span>Pour viser une épargne importante, si votre budget le permet.</span>
+        </span>
       </label>
 
-      <button type="submit" class="principal">
-        Créer le profil
+      <label class="option-style-epargne">
+        <input
+          type="radio"
+          name="style-epargne"
+          value="economedium"
+        >
+        <span>
+          <strong>Économedium</strong>
+          <span class="style-pourcentage">20 % des revenus</span>
+          <span>Pour rechercher un équilibre entre épargne et dépenses courantes.</span>
+        </span>
+      </label>
+
+      <label class="option-style-epargne">
+        <input
+          type="radio"
+          name="style-epargne"
+          value="petit-econome"
+        >
+        <span>
+          <strong>Petit économe</strong>
+          <span class="style-pourcentage">10 % des revenus</span>
+          <span>Pour commencer progressivement, sans trop se priver.</span>
+        </span>
+      </label>
+
+    </div>
+
+    <div class="actions-profil-etapes">
+      <button type="button" id="precedent-profil-2">
+        Retour
       </button>
-    </form>
+      <button type="button" id="suivant-profil-2" class="principal">
+        Continuer
+      </button>
+    </div>
+  </div>
+
+  <!-- Étape 3 : revenus et objectif mensuel -->
+  <div class="etape-profil" data-etape="3" hidden>
+    <p class="etape-profil-indication">Étape 3 sur 3</p>
+    <h3>Votre revenu mensuel net</h3>
+    <p>Indiquez le montant que vous recevez chaque mois après déductions.</p>
+
+    <label for="revenu-mensuel-profil">
+      Revenu mensuel net (€)
+    </label>
+    <input
+      type="number"
+      id="revenu-mensuel-profil"
+      min="0.01"
+      max="1000000000"
+      step="0.01"
+      placeholder="Ex. : 2 000"
+      inputmode="decimal"
+      required
+    >
+
+    <div class="objectif-mensuel-profil" aria-live="polite">
+      <p>Votre objectif d'épargne mensuel indicatif</p>
+      <strong id="montant-objectif-profil">—</strong>
+      <p id="detail-objectif-profil">
+        Saisissez votre revenu pour calculer votre objectif.
+      </p>
+    </div>
+
+    <p class="note-objectif-profil">
+      Cet objectif est une estimation. Vous pourrez l'adapter à vos charges
+      et à votre situation financière.
+    </p>
+
+    <div class="actions-profil-etapes">
+      <button type="button" id="precedent-profil-3">
+        Retour
+      </button>
+      <button type="submit" id="valider-creation-profil" class="principal">
+        Créer mon profil
+      </button>
+    </div>
+  </div>
+
+</form>
 
   </div>
 </div>
