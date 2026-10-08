@@ -15,6 +15,25 @@ const boutonArchiver = document.getElementById("bouton-archiver");
 const boutonVider = document.getElementById("bouton-vider");
 const boutonViderArchives = document.getElementById("bouton-vider-archives");
 
+// Épargne en concret
+const epargneConcretMontant =
+  document.getElementById("epargne-concret-montant");
+
+const epargneConcretMessage =
+  document.getElementById("epargne-concret-message");
+
+const epargneConcretReferenceNom =
+  document.getElementById("epargne-concret-reference-nom");
+
+const epargneConcretReferenceValeur =
+  document.getElementById("epargne-concret-reference-valeur");
+
+const epargneConcretProchainValeur =
+  document.getElementById("epargne-concret-prochain-valeur");
+
+const epargneConcretProchainMessage =
+  document.getElementById("epargne-concret-prochain-message");
+
 // 2. Données sauvegardées du profil actif
 const donneesProfil = EconomiesProfils.charger();
 
@@ -776,6 +795,115 @@ function afficherTotalCumule() {
   totalCumuleAffiche.textContent = formaterMontant(arrondir(somme));
 }
 
+function afficherEpargneConcret() {
+
+  let somme = 0;
+
+  Object.keys(economiesParJour).forEach(function (cle) {
+    somme += economiesParJour[cle];
+  });
+
+  somme = arrondir(somme);
+
+  epargneConcretMontant.textContent =
+    formaterMontant(somme);
+
+
+  // ----------------------------------------------------------
+  // Aucun montant économisé
+  // ----------------------------------------------------------
+
+  if (somme <= 0) {
+
+    epargneConcretMessage.textContent =
+      "Commence à économiser pour découvrir ce que ton épargne représente.";
+
+    epargneConcretReferenceNom.textContent =
+      "Ta première référence apparaîtra ici";
+
+    epargneConcretReferenceValeur.textContent =
+      "";
+
+    epargneConcretProchainValeur.textContent =
+      "—";
+
+    epargneConcretProchainMessage.textContent =
+      "";
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // Référence la plus proche
+  // ----------------------------------------------------------
+
+  const reference =
+    trouverReferenceProche(somme);
+
+  if (reference) {
+
+    const quantite =
+      Math.floor(somme / reference.valeur);
+
+    if (quantite >= 1) {
+
+      epargneConcretMessage.textContent =
+        "Cela représente environ " +
+        quantite +
+        " " +
+        reference.nom +
+        (quantite > 1 ? "s." : "") +
+        ".";
+
+    } else {
+
+      epargneConcretMessage.textContent =
+        "Tu te rapproches déjà de cette référence.";
+    }
+
+
+    epargneConcretReferenceNom.textContent =
+      reference.nom;
+
+    epargneConcretReferenceValeur.textContent =
+      "Valeur indicative : " +
+      formaterMontant(reference.valeur);
+  }
+
+
+  // ----------------------------------------------------------
+  // Prochain palier
+  // ----------------------------------------------------------
+
+  const prochaine =
+    trouverProchaineReference(somme);
+
+  if (prochaine) {
+
+    const reste =
+      arrondir(prochaine.valeur - somme);
+
+    epargneConcretProchainValeur.textContent =
+      formaterMontant(prochaine.valeur);
+
+    epargneConcretProchainMessage.textContent =
+      "Encore " +
+      formaterMontant(reste) +
+      " pour atteindre environ " +
+      prochaine.nom +
+      ".";
+
+  } else {
+
+    epargneConcretProchainValeur.textContent =
+      "Tu as dépassé toutes les références actuelles.";
+
+    epargneConcretProchainMessage.textContent =
+      "De nouvelles références pourront être ajoutées prochainement.";
+  }
+}
+
 // 7. Affichage de l'historique et des archives
 function dessinerOperations(conteneur, operations) {
   conteneur.innerHTML = "";
@@ -806,6 +934,7 @@ function afficher() {
   afficherDefis();
   afficherObjectifs();
   afficherTotalCumule();
+  afficherEpargneConcret();
   dessinerGraphique();
   dessinerOperations(listeHistorique, historique);
   dessinerOperations(listeArchives, archives);
