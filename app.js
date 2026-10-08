@@ -893,6 +893,155 @@ function creerFormulaireObjectif(objectif) {
   return ligne;
 }
 
+// ============================================================
+// 9 bis. GESTION DE L'INTERFACE DES PROFILS
+// ============================================================
+
+const boutonProfil = document.getElementById("bouton-profil");
+const nomProfil = document.getElementById("nom-profil");
+const fenetreProfils = document.getElementById("fenetre-profils");
+const fermerProfils = document.getElementById("fermer-profils");
+const listeProfils = document.getElementById("liste-profils");
+const formulaireProfil = document.getElementById("formulaire-profil");
+const nomNouveauProfil = document.getElementById("nom-nouveau-profil");
+
+
+// ------------------------------------------------------------
+// Affichage du profil actif
+// ------------------------------------------------------------
+
+function afficherNomProfil() {
+  const profil = EconomiesProfils.getActif();
+
+  if (profil) {
+    nomProfil.textContent = profil.nom;
+  } else {
+    nomProfil.textContent = "Mon profil";
+  }
+}
+
+
+// ------------------------------------------------------------
+// Affichage de la liste des profils
+// ------------------------------------------------------------
+
+function afficherListeProfils() {
+  const profils = EconomiesProfils.lister();
+  const profilActif = EconomiesProfils.getActif();
+
+  listeProfils.innerHTML = "";
+
+  Object.values(profils).forEach(function (profil) {
+
+    const ligne = document.createElement("div");
+    ligne.className = "profil-ligne";
+
+    const informations = document.createElement("div");
+
+    const nom = document.createElement("strong");
+    nom.textContent = profil.nom;
+
+    informations.appendChild(nom);
+
+    if (
+      profilActif &&
+      profil.id === profilActif.id
+    ) {
+      const actif = document.createElement("span");
+      actif.className = "profil-actif";
+      actif.textContent = "Profil actif";
+      informations.appendChild(actif);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    // Bouton pour changer de profil
+    if (
+      !profilActif ||
+      profil.id !== profilActif.id
+    ) {
+      const boutonChoisir = document.createElement("button");
+      boutonChoisir.textContent = "Choisir";
+      boutonChoisir.className = "principal";
+
+      boutonChoisir.addEventListener("click", function () {
+        EconomiesProfils.changer(profil.id);
+      });
+
+      actions.appendChild(boutonChoisir);
+    }
+
+    // Bouton supprimer
+    const tousLesProfils = Object.keys(profils);
+
+    if (tousLesProfils.length > 1) {
+      const boutonSupprimer = document.createElement("button");
+      boutonSupprimer.textContent = "Supprimer";
+      boutonSupprimer.className = "supprimer";
+
+      boutonSupprimer.addEventListener("click", function () {
+        EconomiesProfils.supprimer(profil.id);
+      });
+
+      actions.appendChild(boutonSupprimer);
+    }
+
+    ligne.appendChild(informations);
+    ligne.appendChild(actions);
+
+    listeProfils.appendChild(ligne);
+  });
+}
+
+
+// ------------------------------------------------------------
+// Ouverture de la fenêtre
+// ------------------------------------------------------------
+
+boutonProfil.addEventListener("click", function () {
+  afficherNomProfil();
+  afficherListeProfils();
+
+  fenetreProfils.hidden = false;
+});
+
+
+// ------------------------------------------------------------
+// Fermeture de la fenêtre
+// ------------------------------------------------------------
+
+fermerProfils.addEventListener("click", function () {
+  fenetreProfils.hidden = true;
+});
+
+
+// ------------------------------------------------------------
+// Création d'un nouveau profil
+// ------------------------------------------------------------
+
+formulaireProfil.addEventListener("submit", function (evenement) {
+  evenement.preventDefault();
+
+  const nom = nomNouveauProfil.value.trim();
+
+  if (!nom) {
+    return;
+  }
+
+  const profil = EconomiesProfils.creer(nom);
+
+  if (!profil) {
+    return;
+  }
+
+  /*
+   * creerProfil() rend automatiquement le nouveau profil actif.
+   * On recharge donc l'application pour charger ses données vierges.
+   */
+  window.location.reload();
+});
+
 // 10. Démarrage
 // Modèles de défis (montants moyens indicatifs, à ajuster)
 
@@ -1006,6 +1155,7 @@ function majModeles() {
   champFrequence.value = frequence;
 }
 
+afficherNomProfil();
 afficher();
 verifierAccumulation();
 setInterval(verifierAccumulation, 60000); // vérifie chaque minute
