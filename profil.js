@@ -1,9 +1,11 @@
-// Gestion des profils locaux
+// ============================================================
+// GESTION DES PROFILS LOCAUX
+// ============================================================
 
 const CLE_PROFILS = "economies_profils";
 const CLE_PROFIL_ACTIF = "economies_profil_actif";
 
-const ANCIENNES_CLES = [
+const CLES_DONNEES = [
   "defis",
   "historique",
   "archives",
@@ -15,135 +17,490 @@ const DONNEES_VIDES = {
   defis: [],
   historique: [],
   archives: [],
-  economiesParJour: {},
+  economiesParJour: null,
   objectifs: []
 };
 
+
+// ============================================================
+// OUTILS DE BASE
+// ============================================================
+
 function lireProfils() {
   try {
-    return JSON.parse(localStorage.getItem(CLE_PROFILS)) || {};
+    return JSON.parse(
+      localStorage.getItem(CLE_PROFILS)
+    ) || {};
   } catch (erreur) {
-    console.error("Impossible de lire les profils :", erreur);
+    console.error(
+      "Impossible de lire les profils :",
+      erreur
+    );
+
     return {};
   }
 }
 
+
 function enregistrerProfils(profils) {
-  localStorage.setItem(CLE_PROFILS, JSON.stringify(profils));
+  localStorage.setItem(
+    CLE_PROFILS,
+    JSON.stringify(profils)
+  );
 }
+
 
 function lireProfilActif() {
-  return localStorage.getItem(CLE_PROFIL_ACTIF);
+  return localStorage.getItem(
+    CLE_PROFIL_ACTIF
+  );
 }
+
 
 function definirProfilActif(id) {
-  localStorage.setItem(CLE_PROFIL_ACTIF, id);
+  localStorage.setItem(
+    CLE_PROFIL_ACTIF,
+    id
+  );
 }
+
 
 function creerIdProfil() {
-  return "p" + Date.now() + Math.random().toString(36).slice(2, 8);
+  return (
+    "p" +
+    Date.now() +
+    Math.random()
+      .toString(36)
+      .slice(2, 8)
+  );
 }
 
-function creerProfil(nom) {
-  const profils = lireProfils();
 
-  const id = creerIdProfil();
+function copierDonnees(donnees) {
+  return JSON.parse(
+    JSON.stringify(donnees)
+  );
+}
 
-  profils[id] = {
-    id: id,
-    nom: nom.trim(),
-    dateCreation: new Date().toISOString(),
-    donnees: JSON.parse(JSON.stringify(DONNEES_VIDES))
-  };
 
-  enregistrerProfils(profils);
-  definirProfilActif(id);
+// ============================================================
+// PROFIL ACTIF
+// ============================================================
+
+function getProfilActif() {
+
+  const profils =
+    lireProfils();
+
+  let id =
+    lireProfilActif();
+
+  /*
+   * Si le profil enregistré n'existe plus,
+   * on prend le premier profil disponible.
+   */
+
+  if (
+    !id ||
+    !profils[id]
+  ) {
+
+    const ids =
+      Object.keys(profils);
+
+    if (ids.length === 0) {
+      return null;
+    }
+
+    id = ids[0];
+
+    definirProfilActif(id);
+  }
 
   return profils[id];
 }
 
-function supprimerProfil(id) {
-  const profils = lireProfils();
 
-  delete profils[id];
+// ============================================================
+// CRÉATION
+// ============================================================
 
-  enregistrerProfils(profils);
+function creerProfil(nom) {
 
-  const ids = Object.keys(profils);
+  nom =
+    String(nom || "")
+      .trim();
 
-  if (ids.length > 0) {
-    definirProfilActif(ids[0]);
-  } else {
-    localStorage.removeItem(CLE_PROFIL_ACTIF);
-  }
-}
-
-function getProfilActif() {
-  const profils = lireProfils();
-  const id = lireProfilActif();
-
-  if (id && profils[id]) {
-    return profils[id];
-  }
-
-  const ids = Object.keys(profils);
-
-  if (ids.length === 0) {
+  if (!nom) {
     return null;
   }
 
-  definirProfilActif(ids[0]);
-  return profils[ids[0]];
-}
+  const profils =
+    lireProfils();
 
-// Migration des anciennes données
-function migrerAnciennesDonnees() {
-  const profils = lireProfils();
+  const id =
+    creerIdProfil();
 
-  // Des profils existent déjà : aucune migration nécessaire
-  if (Object.keys(profils).length > 0) {
-    return;
-  }
+  const profil = {
+    id: id,
 
-  let anciennesDonnees = {};
-  let trouve = false;
+    nom: nom,
 
-  ANCIENNES_CLES.forEach(function (cle) {
-    const valeur = localStorage.getItem(cle);
+    dateCreation:
+      new Date().toISOString(),
 
-    if (valeur !== null) {
-      try {
-        anciennesDonnees[cle] = JSON.parse(valeur);
-        trouve = true;
-      } catch (erreur) {
-        console.warn("Donnée impossible à migrer :", cle);
-      }
-    }
-  });
-
-  if (!trouve) {
-    return;
-  }
-
-  const profil = creerProfil("Mon profil");
-
-  profil.donnees = {
-    defis: anciennesDonnees.defis || [],
-    historique: anciennesDonnees.historique || [],
-    archives: anciennesDonnees.archives || [],
-    economiesParJour: anciennesDonnees.economiesParJour || {},
-    objectifs: anciennesDonnees.objectifs || []
+    donnees:
+      copierDonnees(
+        DONNEES_VIDES
+      )
   };
 
-  const nouveauxProfils = lireProfils();
-  nouveauxProfils[profil.id] = profil;
+  profils[id] =
+    profil;
 
-  enregistrerProfils(nouveauxProfils);
+  enregistrerProfils(
+    profils
+  );
 
-  // Les anciennes clés ne sont plus nécessaires.
-  ANCIENNES_CLES.forEach(function (cle) {
-    localStorage.removeItem(cle);
-  });
+  definirProfilActif(
+    id
+  );
+
+  return profil;
 }
+
+
+// ============================================================
+// SAUVEGARDE DES DONNÉES DU PROFIL
+// ============================================================
+
+function sauvegarderDonneesProfil(
+  donnees
+) {
+
+  const profil =
+    getProfilActif();
+
+  if (!profil) {
+    return false;
+  }
+
+  const profils =
+    lireProfils();
+
+  /*
+   * On remplace uniquement les données,
+   * pas les informations du profil.
+   */
+
+  profils[profil.id].donnees = {
+    defis:
+      donnees.defis || [],
+
+    historique:
+      donnees.historique || [],
+
+    archives:
+      donnees.archives || [],
+
+    economiesParJour:
+      donnees.economiesParJour ?? null,
+
+    objectifs:
+      donnees.objectifs || []
+  };
+
+  enregistrerProfils(
+    profils
+  );
+
+  return true;
+}
+
+
+// ============================================================
+// RÉCUPÉRATION DES DONNÉES
+// ============================================================
+
+function chargerDonneesProfil() {
+
+  const profil =
+    getProfilActif();
+
+  if (!profil) {
+
+    return copierDonnees(
+      DONNEES_VIDES
+    );
+
+  }
+
+  return Object.assign(
+    copierDonnees(
+      DONNEES_VIDES
+    ),
+    profil.donnees || {}
+  );
+}
+
+
+// ============================================================
+// CHANGEMENT DE PROFIL
+// ============================================================
+
+function changerProfil(id) {
+
+  const profils =
+    lireProfils();
+
+  if (!profils[id]) {
+    return false;
+  }
+
+  definirProfilActif(
+    id
+  );
+
+  /*
+   * Recharge l'application afin que toutes les variables
+   * de app.js soient recréées avec les nouvelles données.
+   */
+
+  window.location.reload();
+
+  return true;
+}
+
+
+// ============================================================
+// SUPPRESSION
+// ============================================================
+
+function supprimerProfil(id) {
+
+  const profils =
+    lireProfils();
+
+  if (!profils[id]) {
+    return false;
+  }
+
+  const ids =
+    Object.keys(profils);
+
+  if (ids.length <= 1) {
+
+    alert(
+      "Tu dois conserver au moins un profil."
+    );
+
+    return false;
+  }
+
+  const profil =
+    profils[id];
+
+  const confirmation =
+    confirm(
+      "Supprimer définitivement le profil « " +
+      profil.nom +
+      " » et toutes ses données ?"
+    );
+
+  if (!confirmation) {
+    return false;
+  }
+
+  delete profils[id];
+
+  let profilActif =
+    lireProfilActif();
+
+  if (
+    profilActif === id
+  ) {
+
+    profilActif =
+      Object.keys(profils)[0];
+
+    definirProfilActif(
+      profilActif
+    );
+  }
+
+  enregistrerProfils(
+    profils
+  );
+
+  window.location.reload();
+
+  return true;
+}
+
+
+// ============================================================
+// MIGRATION DES ANCIENNES DONNÉES
+// ============================================================
+
+function migrerAnciennesDonnees() {
+
+  const profils =
+    lireProfils();
+
+  /*
+   * Si des profils existent déjà,
+   * surtout ne rien migrer.
+   */
+
+  if (
+    Object.keys(profils).length > 0
+  ) {
+    return;
+  }
+
+  const anciennesDonnees = {};
+
+  let trouve =
+    false;
+
+  CLES_DONNEES.forEach(
+    function (cle) {
+
+      const valeur =
+        localStorage.getItem(
+          cle
+        );
+
+      if (
+        valeur !== null
+      ) {
+
+        try {
+
+          anciennesDonnees[cle] =
+            JSON.parse(valeur);
+
+          trouve =
+            true;
+
+        } catch (erreur) {
+
+          console.warn(
+            "Impossible de migrer :",
+            cle,
+            erreur
+          );
+
+        }
+      }
+
+    }
+  );
+
+
+  /*
+   * Même sur une installation neuve,
+   * on crée un profil par défaut.
+   */
+
+  const profil =
+    creerProfil(
+      "Mon profil"
+    );
+
+  if (!profil) {
+    return;
+  }
+
+
+  /*
+   * Si d'anciennes données existaient,
+   * on les récupère.
+   */
+
+  if (trouve) {
+
+    const profils =
+      lireProfils();
+
+    profils[profil.id].donnees = {
+
+      defis:
+        anciennesDonnees.defis ||
+        [],
+
+      historique:
+        anciennesDonnees.historique ||
+        [],
+
+      archives:
+        anciennesDonnees.archives ||
+        [],
+
+      economiesParJour:
+        anciennesDonnees.economiesParJour ??
+        null,
+
+      objectifs:
+        anciennesDonnees.objectifs ||
+        []
+
+    };
+
+    enregistrerProfils(
+      profils
+    );
+
+
+    /*
+     * Les anciennes clés ne servent plus.
+     */
+
+    CLES_DONNEES.forEach(
+      function (cle) {
+
+        localStorage.removeItem(
+          cle
+        );
+
+      }
+    );
+  }
+}
+
+
+// ============================================================
+// INTERFACE PUBLIQUE
+// ============================================================
+
+window.EconomiesProfils = {
+
+  getActif:
+    getProfilActif,
+
+  charger:
+    chargerDonneesProfil,
+
+  sauvegarder:
+    sauvegarderDonneesProfil,
+
+  creer:
+    creerProfil,
+
+  changer:
+    changerProfil,
+
+  supprimer:
+    supprimerProfil,
+
+  lister:
+    lireProfils
+
+};
+
+
+// ============================================================
+// INITIALISATION
+// ============================================================
 
 migrerAnciennesDonnees();
