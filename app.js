@@ -19,10 +19,17 @@ const boutonViderArchives = document.getElementById("bouton-vider-archives");
 let defis = JSON.parse(localStorage.getItem("defis")) || [];
 let historique = JSON.parse(localStorage.getItem("historique")) || [];
 let archives = JSON.parse(localStorage.getItem("archives")) || [];
+let objectifs = JSON.parse(localStorage.getItem("objectifs")) || [];
 let economiesParJour = JSON.parse(localStorage.getItem("economiesParJour"));
 
 // Mise à niveau des défis créés avant l'accumulation automatique
 defis.forEach(function (defi) {
+      if (!defi.id) {
+    defi.id = "d" + Date.now() + Math.random().toString(36).slice(2, 6);
+  }
+  if (!defi.economies) {
+    defi.economies = {};
+  }
   if (defi.frequence === undefined) {
     defi.frequence = 0;
     defi.dateDebut = new Date().toISOString();
@@ -47,6 +54,7 @@ function sauvegarder() {
   localStorage.setItem("historique", JSON.stringify(historique));
   localStorage.setItem("archives", JSON.stringify(archives));
   localStorage.setItem("economiesParJour", JSON.stringify(economiesParJour));
+  localStorage.setItem("objectifs", JSON.stringify(objectifs));
 }
 
 // 3. Petites fonctions utiles
@@ -84,9 +92,13 @@ function dateDepuisCle(cle) {
   );
 }
 
-function enregistrerEconomie(date, montant) {
+function enregistrerEconomie(date, montant, defi) {
   const cle = cleDate(date);
   economiesParJour[cle] = arrondir((economiesParJour[cle] || 0) + montant);
+  if (defi) {
+    defi.economies = defi.economies || {};
+    defi.economies[cle] = arrondir((defi.economies[cle] || 0) + montant);
+  }
 }
 
 function ajouterHistorique(type, nomDefi, montant, nombre) {
@@ -118,7 +130,7 @@ function verifierAccumulation() {
   let modifie = false;
 
   defis.forEach(function (defi) {
-    if (defi.frequence <= 0) {
+    if (defi.frequence <= 0 || defi.enPause) {
       return; // pas d'automatisme : on passe au défi suivant
     }
 
@@ -135,7 +147,7 @@ function verifierAccumulation() {
           debut.getMonth(),
           debut.getDate() + k * defi.frequence
         );
-        enregistrerEconomie(dateAjout, defi.montant);
+        enregistrerEconomie(dateAjout, defi.montant, defi);
       }
 
       const somme = arrondir(aCrediter * defi.montant);
@@ -152,22 +164,89 @@ function verifierAccumulation() {
   }
 }
 
+let defiEnEdition = null; // le défi en cours de modification (aucun au départ)
+
+function creerFormulaireEdition(defi) {
+  const ligne = document.createElement("li");
+  ligne.className = "defi edition";
+  ligne.innerHTML =
+    '<label>Nom<input type="text" class="e-nom"></label>' +
+    '<label>Montant (€)<input type="number" class="e-montant" step="0.01" min="0"></label>' +
+    '<label>Ajout automatique tous les ... jours (0 = désactivé)' +
+    '<input type="number" class="e-frequence" min="0" step="1"></label>' +
+    '<div class="actions"></div>';
+
+  ligne.querySelector(".e-nom").value = defi.nom;
+  ligne.querySelector(".e-montant").value = defi.montant;
+  ligne.querySelector(".e-frequence").value = defi.frequence;
+
+  const boutonEnregistrer = document.createElement("button");
+  boutonEnregistrer.textContent = "Enregistrer";
+  boutonEnregistrer.className = "principal";
+  boutonEnregistrer.addEventListener("click", function () {
+    const nom = ligne.querySelector(".e-nom").value.trim();
+    const montant = parseFloat(ligne.querySelector(".e-montant").value);
+    const frequence = parseInt(ligne.querySelector(".e-frequence").value, 10);
+
+    if (!nom || isNaN(montant) || montant < 0 || isNaN(frequence) || frequence < 0) {
+      alert("Vérifie le nom, le montant et la fréquence.");
+      return;
+    }
+
+    // Si la fréquence change, le calendrier repart d'aujourd'hui
+    if (frequence !== defi.frequence) {
+      defi.dateDebut = new Date().toISOString();
+      defi.periodesCreditees = 0;
+    }
+
+    defi.nom = nom;
+    defi.montant = montant;
+    defi.frequence = frequence;
+    defiEnEdition = null;
+    sauvegarder();
+    afficher();
+  });
+
+  const boutonAnnuler = document.createElement("button");
+  boutonAnnuler.textContent = "Annuler";
+  boutonAnnuler.addEventListener("click", function () {
+    defiEnEdition = null;
+    afficher();
+  });
+
+  const actions = ligne.querySelector(".actions");
+  actions.appendChild(boutonEnregistrer);
+  actions.appendChild(boutonAnnuler);
+  return ligne;
+}
+
 // 5. Affichage des défis et du total
 function afficherDefis() {
   liste.innerHTML = "";
   let totalGeneral = 0;
 
-  defis.forEach(function (defi, index) {
+  defis.forEach(function (defi) {
     totalGeneral += defi.epargne;
 
-    let detail = formaterMontant(defi.montant) + " par dépense évitée";
-    if (defi.frequence > 0) {
+    if (defi === defiEnEdition) {
+      liste.appendChild(creerFormulaireEdition(defi));
+      return;
+    }
+
+    const jourDuDefi = numeroJour(new Date()) - numeroJour(new Date(defi.dateCreation || defi.dateDebut)) + 1;
+    let detail = formaterMontant(defi.montant) + " par dépense évitée\nJour " + jourDuDefi + " du défi";
+    if (defi.modeles && defi.modeles.length > 1) {
+      detail += "\nRegroupe : " + defi.modeles.join(", ");
+    }
+    if (defi.enPause) {
+      detail += "\nEn pause : aucun ajout automatique";
+    } else if (defi.frequence > 0) {
       detail += "\nAuto : tous les " + defi.frequence +
         " jour(s), prochain ajout le " + prochainAjout(defi);
     }
 
     const ligne = document.createElement("li");
-    ligne.className = "defi";
+    ligne.className = "defi" + (defi.enPause ? " pause" : "");
     ligne.innerHTML =
       '<div class="defi-tete"><strong></strong><span class="somme"></span></div>' +
       '<p class="detail"></p>';
@@ -182,11 +261,30 @@ function afficherDefis() {
     boutonEvite.textContent = "Dépense évitée";
     boutonEvite.className = "principal";
     boutonEvite.addEventListener("click", function () {
-      defi.epargne = arrondir(defi.epargne + defi.montant);
-      enregistrerEconomie(new Date(), defi.montant);
-      ajouterHistorique("evite", defi.nom, defi.montant);
-      sauvegarder();
-      afficher();
+      ajouterDepenseEvitee(defi, defi.montant);
+    });
+
+    // Montant libre : un petit formulaire qui s'ouvre sous les boutons
+    const boutonLibre = document.createElement("button");
+    boutonLibre.textContent = "Autre montant";
+    const formLibre = document.createElement("form");
+    formLibre.className = "montant-libre";
+    formLibre.hidden = true;
+    formLibre.innerHTML =
+      '<input type="number" step="0.01" min="0.01" placeholder="Montant évité (€)" required>' +
+      '<button type="submit" class="principal">Ajouter</button>';
+    boutonLibre.addEventListener("click", function () {
+      formLibre.hidden = !formLibre.hidden;
+      if (!formLibre.hidden) {
+        formLibre.querySelector("input").focus();
+      }
+    });
+    formLibre.addEventListener("submit", function (evenement) {
+      evenement.preventDefault();
+      const montant = parseFloat(formLibre.querySelector("input").value);
+      if (montant > 0) {
+        ajouterDepenseEvitee(defi, montant);
+      }
     });
 
     const boutonRecuperer = document.createElement("button");
@@ -204,25 +302,50 @@ function afficherDefis() {
       }
     });
 
+    // Pause : à la reprise, le calendrier repart d'aujourd'hui
+    const boutonPause = document.createElement("button");
+    boutonPause.textContent = defi.enPause ? "Reprendre" : "Mettre en pause";
+    boutonPause.addEventListener("click", function () {
+      if (defi.enPause) {
+        defi.dateCreation = defi.dateCreation || defi.dateDebut;
+        defi.dateDebut = new Date().toISOString();
+        defi.periodesCreditees = 0;
+        defi.enPause = false;
+      } else {
+        defi.enPause = true;
+      }
+      sauvegarder();
+      afficher();
+    });
+
+    const boutonModifier = document.createElement("button");
+    boutonModifier.textContent = "Modifier";
+    boutonModifier.addEventListener("click", function () {
+      defiEnEdition = defi;
+      afficher();
+    });
+
     const boutonSupprimer = document.createElement("button");
     boutonSupprimer.textContent = "Supprimer";
     boutonSupprimer.className = "supprimer";
     boutonSupprimer.addEventListener("click", function () {
       if (confirm("Supprimer le défi « " + defi.nom + " » ?")) {
-        defis.splice(index, 1);
+        defis.splice(defis.indexOf(defi), 1);
         sauvegarder();
         afficher();
       }
     });
 
-    actions.appendChild(boutonEvite);
-    actions.appendChild(boutonRecuperer);
-    actions.appendChild(boutonSupprimer);
-    ligne.appendChild(actions);
+    actions.append(boutonEvite, boutonLibre, boutonRecuperer);
+    if (defi.frequence > 0) {
+      actions.append(boutonPause);
+    }
+    actions.append(boutonModifier, boutonSupprimer);
+    ligne.append(actions, formLibre);
     liste.appendChild(ligne);
   });
 
-  totalAffiche.textContent = totalGeneral.toFixed(2).replace(".", ",");
+  animerNombre(totalAffiche, totalGeneral);
 }
 
 // 6. Le graphique
@@ -258,6 +381,11 @@ function calculerCourbe() {
 
 function dessinerGraphique() {
   const points = calculerCourbe();
+  const styles = getComputedStyle(document.documentElement);
+  const couleurTexte = styles.getPropertyValue("--discret").trim();
+  const couleurGrille = styles.getPropertyValue("--trait").trim();
+  const couleurCourbe = styles.getPropertyValue("--courbe").trim();
+  const couleurZone = styles.getPropertyValue("--courbe-zone").trim();
   const ctx = canvas.getContext("2d");
   const largeur = canvas.clientWidth;
   const hauteur = 240;
@@ -270,7 +398,7 @@ function dessinerGraphique() {
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, largeur, hauteur);
   ctx.font = "12px Arial";
-  ctx.fillStyle = "#666";
+  ctx.fillStyle = couleurTexte;
 
   if (points.length === 0) {
     ctx.textAlign = "center";
@@ -296,7 +424,7 @@ function dessinerGraphique() {
 
   // Lignes horizontales et montants
   ctx.textAlign = "right";
-  ctx.strokeStyle = "#e3e3e3";
+  ctx.strokeStyle = couleurGrille;
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const valeur = (maximum / 4) * i;
@@ -333,7 +461,7 @@ function dessinerGraphique() {
   points.forEach(function (point, indice) {
     ctx.lineTo(posX(indice), posY(point.valeur));
   });
-  ctx.strokeStyle = "#0F3D5E";
+  ctx.strokeStyle = couleurCourbe;
   ctx.lineWidth = 2;
   ctx.stroke();
 
@@ -341,7 +469,7 @@ function dessinerGraphique() {
   ctx.lineTo(posX(points.length - 1), posY(0));
   ctx.lineTo(posX(0), posY(0));
   ctx.closePath();
-  ctx.fillStyle = "rgba(15, 61, 94, 0.12)";
+  ctx.fillStyle = couleurZone;
   ctx.fill();
 
   // Un point sur la dernière valeur
@@ -351,7 +479,7 @@ function dessinerGraphique() {
     posY(points[points.length - 1].valeur),
     4, 0, Math.PI * 2
   );
-  ctx.fillStyle = "#0F3D5E";
+  ctx.fillStyle = couleurCourbe;
   ctx.fill();
 }
 
@@ -391,6 +519,7 @@ function dessinerOperations(conteneur, operations) {
 
 function afficher() {
   afficherDefis();
+  afficherObjectifs();
   afficherTotalCumule();
   dessinerGraphique();
   dessinerOperations(listeHistorique, historique);
@@ -435,6 +564,10 @@ formulaire.addEventListener("submit", function (evenement) {
     nom: champNom.value,
     montant: parseFloat(champMontant.value),
     epargne: 0,
+    id: "d" + Date.now(),
+    economies: {},
+    dateCreation: new Date().toISOString(),
+    modeles: modelesChoisis.map(function (m) { return m.nom; }),
     frequence: parseInt(champFrequence.value, 10),
     dateDebut: new Date().toISOString(),
     periodesCreditees: 0
@@ -443,9 +576,432 @@ formulaire.addEventListener("submit", function (evenement) {
   sauvegarder();
   afficher();
   formulaire.reset();
+  dernierNomAuto = "";
+  majModeles();
 });
 
+// Objectifs d'épargne
+const formulaireObjectif = document.getElementById("formulaire-objectif");
+const champNomObjectif = document.getElementById("nom-objectif");
+const champCibleObjectif = document.getElementById("cible-objectif");
+const listeObjectifs = document.getElementById("liste-objectifs");
+
+// Total économisé depuis la création de l'objectif
+
+const champDateObjectif = document.getElementById("date-objectif");
+champDateObjectif.min = cleDate(new Date());
+
+const MESSAGES = [
+  ["Ton objectif est prêt : chaque dépense évitée te rapproche.", "Le plus dur est de commencer, et c'est fait.", "La première économie ne va pas tarder."],
+  ["Bien parti ! Les petits montants font les grands totaux.", "Tu as démarré, c'est ce qui compte.", "Chaque pièce posée est une pièce gagnée."],
+  ["Un quart du chemin : ça commence à se voir.", "Tu prends de l'élan, continue ainsi.", "Régulier, c'est exactement ce qu'il faut."],
+  ["Tu as passé la moitié, le plus gros est derrière toi.", "La ligne d'arrivée se dessine.", "Belle constance, tu es au milieu du chemin."],
+  ["Plus que quelques efforts, le but est en vue.", "Tu touches au but, ne lâche rien.", "Dernière ligne droite, tu y es presque."],
+  ["Objectif atteint, bravo !", "Mission accomplie : tu l'as fait.", "Tu l'as mérité, profite-en."]
+];
+
+function progressionObjectif(objectif) {
+  const depuis = cleDate(new Date(objectif.dateCreation));
+  const ids = objectif.defisIds || [];
+  let somme = 0;
+
+  if (ids.length === 0) {
+    Object.keys(economiesParJour).forEach(function (cle) {
+      if (cle >= depuis) {
+        somme += economiesParJour[cle];
+      }
+    });
+  } else {
+    defis.forEach(function (defi) {
+      if (ids.includes(defi.id)) {
+        Object.keys(defi.economies || {}).forEach(function (cle) {
+          if (cle >= depuis) {
+            somme += defi.economies[cle];
+          }
+        });
+      }
+    });
+  }
+  return arrondir(somme);
+}
+
+// Calcule le montant mensuel à viser pour tenir la date limite
+function planObjectif(objectif, progression) {
+  const reste = objectif.cible - progression;
+  const fin = new Date(objectif.dateLimite + "T23:59:59");
+  const joursRestants = Math.ceil((fin - new Date()) / 86400000);
+  const dateTexte = fin.toLocaleDateString("fr-FR");
+
+  if (joursRestants <= 0) {
+    return "Date limite dépassée : il manque " + formaterMontant(reste) + ".";
+  }
+  const mois = joursRestants / 30.4375;
+  if (mois < 1) {
+    return "D'ici le " + dateTexte + " : " + formaterMontant(reste) + " à mettre de côté.";
+  }
+
+  const parMois = reste / mois;
+  const jours = Math.max(1, numeroJour(new Date()) - numeroJour(new Date(objectif.dateCreation)) + 1);
+  const rythme = (progression / jours) * 30.4375;
+  let phrase = "Avant le " + dateTexte + " : environ " + formaterMontant(parMois) + " par mois.";
+  phrase += rythme >= parMois
+    ? " Tu es dans les temps."
+    : " Ton rythme actuel : " + formaterMontant(rythme) + " par mois.";
+  return phrase;
+}
+
+function afficherObjectifs() {
+  listeObjectifs.innerHTML = "";
+
+  objectifs.forEach(function (objectif, index) {
+    objectif.defisIds = objectif.defisIds || [];
+    if (objectif === objectifEnEdition) {
+      listeObjectifs.appendChild(creerFormulaireObjectif(objectif));
+      return;
+    }
+    const progression = progressionObjectif(objectif);
+    const pourcentage = Math.min(100, Math.floor((progression / objectif.cible) * 100));
+    const atteint = progression >= objectif.cible;
+
+    // Le message change à chaque progression
+    let anime = false;
+    let ancienPourcentage = pourcentage;
+    if (objectif.derniereProgression === undefined) {
+      objectif.indexMessage = 0;
+    } else if (progression > objectif.derniereProgression) {
+      objectif.indexMessage = (objectif.indexMessage || 0) + 1;
+      ancienPourcentage = Math.min(100, Math.floor((objectif.derniereProgression / objectif.cible) * 100));
+      anime = true;
+    }
+    objectif.derniereProgression = progression;
+
+    let tranche = 0;
+    if (atteint) { tranche = 5; }
+    else if (pourcentage >= 75) { tranche = 4; }
+    else if (pourcentage >= 50) { tranche = 3; }
+    else if (pourcentage >= 25) { tranche = 2; }
+    else if (progression > 0) { tranche = 1; }
+    const choix = MESSAGES[tranche];
+    const message = choix[(objectif.indexMessage || 0) % choix.length];
+
+    let details = formaterMontant(progression) + " sur " + formaterMontant(objectif.cible);
+    if (!atteint && objectif.dateLimite) {
+      details += "\n" + planObjectif(objectif, progression);
+    }
+
+    const ligne = document.createElement("li");
+    ligne.className = "defi objectif" + (atteint ? " atteint" : "");
+    ligne.innerHTML =
+      '<div class="defi-tete"><strong></strong><span class="somme"></span></div>' +
+      '<div class="barre"><div class="barre-remplie"></div></div>' +
+      '<p class="message"></p><p class="detail"></p><div class="liens"></div>';
+    ligne.querySelector("strong").textContent = objectif.nom;
+    ligne.querySelector(".somme").textContent = pourcentage + " %";
+    ligne.querySelector(".detail").innerText = details;
+
+    const messageElement = ligne.querySelector(".message");
+    messageElement.textContent = message;
+    if (anime) {
+      messageElement.classList.add("change");
+    }
+
+    // La barre se remplit en douceur
+    const barre = ligne.querySelector(".barre-remplie");
+    barre.style.width = ancienPourcentage + "%";
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        barre.style.width = pourcentage + "%";
+      });
+    });
+
+    // Choix des défis qui alimentent cet objectif
+    const liens = ligne.querySelector(".liens");
+    if (defis.length > 0) {
+      const titre = document.createElement("p");
+      titre.className = "detail";
+      titre.textContent = objectif.defisIds.length === 0
+        ? "Défis associés : aucun coché, tout ce que tu économises compte."
+        : "Défis associés :";
+      liens.appendChild(titre);
+    }
+    defis.forEach(function (defi) {
+      const etiquette = document.createElement("label");
+      const caseCochee = document.createElement("input");
+      caseCochee.type = "checkbox";
+      caseCochee.checked = objectif.defisIds.includes(defi.id);
+      caseCochee.addEventListener("change", function () {
+        if (caseCochee.checked) {
+          objectif.defisIds.push(defi.id);
+        } else {
+          objectif.defisIds = objectif.defisIds.filter(function (id) { return id !== defi.id; });
+        }
+        sauvegarder();
+        afficher();
+      });
+      etiquette.appendChild(caseCochee);
+      etiquette.appendChild(document.createTextNode(defi.nom));
+      liens.appendChild(etiquette);
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const boutonSupprimer = document.createElement("button");
+    boutonSupprimer.textContent = "Supprimer";
+    boutonSupprimer.className = "supprimer";
+    boutonSupprimer.addEventListener("click", function () {
+      if (confirm("Supprimer l'objectif « " + objectif.nom + " » ?")) {
+        objectifs.splice(index, 1);
+        sauvegarder();
+        afficher();
+      }
+    });
+    const boutonModifierObjectif = document.createElement("button");
+    boutonModifierObjectif.textContent = "Modifier";
+    boutonModifierObjectif.addEventListener("click", function () {
+      objectifEnEdition = objectif;
+      afficher();
+    });
+    actions.appendChild(boutonModifierObjectif);
+    actions.appendChild(boutonSupprimer);
+    ligne.appendChild(actions);
+    listeObjectifs.appendChild(ligne);
+  });
+
+  sauvegarder();
+}
+
+formulaireObjectif.addEventListener("submit", function (evenement) {
+  evenement.preventDefault();
+
+  objectifs.push({
+    nom: champNomObjectif.value.trim(),
+    cible: parseFloat(champCibleObjectif.value),
+    dateCreation: new Date().toISOString(),
+    dateLimite: champDateObjectif.value,
+    defisIds: []
+  });
+
+  sauvegarder();
+  afficher();
+  formulaireObjectif.reset();
+});
+
+// Notification avec bouton Annuler
+let minuteurNotification = null;
+
+function afficherNotification(texte, actionAnnuler) {
+  let boite = document.getElementById("notification");
+  if (!boite) {
+    boite = document.createElement("div");
+    boite.id = "notification";
+    document.body.appendChild(boite);
+  }
+  boite.innerHTML = "";
+
+  const message = document.createElement("span");
+  message.textContent = texte;
+  boite.appendChild(message);
+
+  if (actionAnnuler) {
+    const bouton = document.createElement("button");
+    bouton.textContent = "Annuler";
+    bouton.addEventListener("click", function () {
+      actionAnnuler();
+      boite.classList.remove("visible");
+    });
+    boite.appendChild(bouton);
+  }
+
+  boite.classList.add("visible");
+  clearTimeout(minuteurNotification);
+  minuteurNotification = setTimeout(function () {
+    boite.classList.remove("visible");
+  }, 6000);
+}
+
+// Ajoute une dépense évitée (montant fixe ou libre), avec possibilité d'annuler
+function ajouterDepenseEvitee(defi, montant) {
+  const date = new Date();
+  defi.epargne = arrondir(defi.epargne + montant);
+  enregistrerEconomie(date, montant, defi);
+  ajouterHistorique("evite", defi.nom, montant);
+  const entree = historique[0];
+  sauvegarder();
+  afficher();
+
+  afficherNotification(
+    formaterMontant(montant) + " ajoutés à « " + defi.nom + " »",
+    function () {
+      if (!defis.includes(defi)) {
+        return;
+      }
+      defi.epargne = arrondir(defi.epargne - montant);
+      enregistrerEconomie(date, -montant, defi);
+      historique = historique.filter(function (e) { return e !== entree; });
+      archives = archives.filter(function (e) { return e !== entree; });
+      sauvegarder();
+      afficher();
+    }
+  );
+}
+
+// Modification d'un objectif
+let objectifEnEdition = null;
+
+function creerFormulaireObjectif(objectif) {
+  const ligne = document.createElement("li");
+  ligne.className = "defi edition";
+  ligne.innerHTML =
+    '<label>Nom<input type="text" class="e-nom"></label>' +
+    '<label>Montant à atteindre (€)<input type="number" class="e-cible" step="0.01" min="1"></label>' +
+    '<label>Date limite (facultatif)<input type="date" class="e-date"></label>' +
+    '<div class="actions"></div>';
+  ligne.querySelector(".e-nom").value = objectif.nom;
+  ligne.querySelector(".e-cible").value = objectif.cible;
+  ligne.querySelector(".e-date").value = objectif.dateLimite || "";
+
+  const boutonEnregistrer = document.createElement("button");
+  boutonEnregistrer.textContent = "Enregistrer";
+  boutonEnregistrer.className = "principal";
+  boutonEnregistrer.addEventListener("click", function () {
+    const nom = ligne.querySelector(".e-nom").value.trim();
+    const cible = parseFloat(ligne.querySelector(".e-cible").value);
+    if (!nom || isNaN(cible) || cible <= 0) {
+      alert("Vérifie le nom et le montant à atteindre.");
+      return;
+    }
+    objectif.nom = nom;
+    objectif.cible = cible;
+    objectif.dateLimite = ligne.querySelector(".e-date").value;
+    objectifEnEdition = null;
+    sauvegarder();
+    afficher();
+  });
+
+  const boutonAnnuler = document.createElement("button");
+  boutonAnnuler.textContent = "Annuler";
+  boutonAnnuler.addEventListener("click", function () {
+    objectifEnEdition = null;
+    afficher();
+  });
+
+  ligne.querySelector(".actions").append(boutonEnregistrer, boutonAnnuler);
+  return ligne;
+}
+
 // 10. Démarrage
+// Modèles de défis (montants moyens indicatifs, à ajuster)
+
+const MODELES = [
+  { groupe: "Tabac et addictions", nom: "Paquet de cigarettes", montant: 12.5, frequence: 1 },
+  { groupe: "Tabac et addictions", nom: "Pochette de tabac à rouler", montant: 14, frequence: 3 },
+  { groupe: "Tabac et addictions", nom: "Recharges de cigarette électronique", montant: 10, frequence: 5 },
+  { groupe: "Tabac et addictions", nom: "Verre ou cocktail au bar", montant: 7, frequence: 3 },
+  { groupe: "Tabac et addictions", nom: "Bouteille de vin ou d'alcool", montant: 9, frequence: 3 },
+  { groupe: "Tabac et addictions", nom: "Paris sportifs et jeux à gratter", montant: 10, frequence: 3 },
+
+  { groupe: "Repas et boissons", nom: "Livraison de repas", montant: 22, frequence: 7 },
+  { groupe: "Repas et boissons", nom: "Fast-food", montant: 12, frequence: 4 },
+  { groupe: "Repas et boissons", nom: "Pizza ou kebab à emporter", montant: 14, frequence: 7 },
+  { groupe: "Repas et boissons", nom: "Restaurant", montant: 35, frequence: 14 },
+  { groupe: "Repas et boissons", nom: "Café à emporter", montant: 3.5, frequence: 1 },
+  { groupe: "Repas et boissons", nom: "Sandwich ou viennoiserie du midi", montant: 6, frequence: 1 },
+  { groupe: "Repas et boissons", nom: "Boisson sucrée ou énergisante", montant: 2.5, frequence: 1 },
+  { groupe: "Repas et boissons", nom: "Snacks, confiseries et distributeur", montant: 3, frequence: 1 },
+
+  { groupe: "Achats et loisirs", nom: "Achat impulsif en ligne", montant: 20, frequence: 7 },
+  { groupe: "Achats et loisirs", nom: "Vêtements fast-fashion", montant: 30, frequence: 14 },
+  { groupe: "Achats et loisirs", nom: "Abonnement peu utilisé (streaming, appli)", montant: 12, frequence: 30 },
+  { groupe: "Achats et loisirs", nom: "Achats dans les jeux vidéo et applis", montant: 10, frequence: 7 },
+  { groupe: "Achats et loisirs", nom: "Sortie ou soirée", montant: 35, frequence: 14 },
+  { groupe: "Achats et loisirs", nom: "Taxi ou VTC pour un petit trajet", montant: 12, frequence: 7 },
+  { groupe: "Achats et loisirs", nom: "Gadgets et petite décoration", montant: 15, frequence: 14 },
+
+  { groupe: "Animal de compagnie", nom: "Croquettes ou pâtée", montant: 30, frequence: 30 },
+  { groupe: "Animal de compagnie", nom: "Provision pour le vétérinaire", montant: 20, frequence: 30 },
+  { groupe: "Animal de compagnie", nom: "Friandises, jouets et accessoires", montant: 10, frequence: 15 },
+  { groupe: "Animal de compagnie", nom: "Toilettage ou pension", montant: 40, frequence: 60 },
+
+  { groupe: "Mise de côté libre", nom: "Petite pièce du jour", montant: 2, frequence: 1 },
+  { groupe: "Mise de côté libre", nom: "Mise de côté du week-end", montant: 10, frequence: 7 }
+];
+
+const listeModeles = document.getElementById("liste-modeles");
+const resumeModeles = document.getElementById("resume-modeles");
+const recapModeles = document.getElementById("recap-modeles");
+let modelesChoisis = [];
+let dernierNomAuto = "";
+
+function rythmeTexte(frequence) {
+  if (frequence === 1) { return "par jour"; }
+  if (frequence === 7) { return "par semaine"; }
+  if (frequence === 30) { return "par mois"; }
+  return "tous les " + frequence + " jours";
+}
+
+// Menu déroulant : une case à cocher par modèle, rangés par famille
+let groupeActuel = "";
+MODELES.forEach(function (modele, i) {
+  if (modele.groupe !== groupeActuel) {
+    groupeActuel = modele.groupe;
+    const titre = document.createElement("p");
+    titre.className = "groupe";
+    titre.textContent = groupeActuel;
+    listeModeles.appendChild(titre);
+  }
+  const etiquette = document.createElement("label");
+  const caseCochee = document.createElement("input");
+  caseCochee.type = "checkbox";
+  caseCochee.value = i;
+  caseCochee.addEventListener("change", majModeles);
+  etiquette.appendChild(caseCochee);
+  etiquette.appendChild(document.createTextNode(
+    modele.nom + " : " + formaterMontant(modele.montant) + " " + rythmeTexte(modele.frequence)
+  ));
+  listeModeles.appendChild(etiquette);
+});
+
+// Met à jour le récapitulatif et remplit le formulaire
+function majModeles() {
+  const cochees = Array.from(listeModeles.querySelectorAll("input:checked"));
+  modelesChoisis = cochees.map(function (c) { return MODELES[Number(c.value)]; });
+  recapModeles.innerHTML = "";
+
+  if (modelesChoisis.length === 0) {
+    resumeModeles.textContent = "Choisir des modèles (facultatif)";
+    return;
+  }
+  resumeModeles.textContent = modelesChoisis.length + " modèle(s) sélectionné(s)";
+
+  let parJour = 0;
+  modelesChoisis.forEach(function (modele) {
+    parJour += modele.montant / modele.frequence;
+    const ligne = document.createElement("li");
+    ligne.textContent =
+      modele.nom + " : " + formaterMontant(modele.montant) + " " + rythmeTexte(modele.frequence);
+    recapModeles.appendChild(ligne);
+  });
+
+  let montant = modelesChoisis[0].montant;
+  let frequence = modelesChoisis[0].frequence;
+  if (modelesChoisis.length > 1) {
+    montant = arrondir(parJour);
+    frequence = 1;
+    const total = document.createElement("li");
+    total.className = "total";
+    total.textContent = "Total regroupé : " + formaterMontant(montant) + " par jour";
+    recapModeles.appendChild(total);
+  }
+
+  const nomAuto = modelesChoisis.map(function (m) { return m.nom; }).join(" + ");
+  if (champNom.value === "" || champNom.value === dernierNomAuto) {
+    champNom.value = nomAuto;
+  }
+  dernierNomAuto = nomAuto;
+  champMontant.value = montant;
+  champFrequence.value = frequence;
+}
+
 afficher();
 verifierAccumulation();
 setInterval(verifierAccumulation, 60000); // vérifie chaque minute
@@ -462,3 +1018,74 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js");
   });
 }
+
+// Total qui s'incrémente en douceur
+function animerNombre(element, cible) {
+  const depart = Number(element.dataset.valeur || 0);
+  element.dataset.valeur = cible;
+  const debut = performance.now();
+
+  function pas(maintenant) {
+    const t = Math.min(1, (maintenant - debut) / 700);
+    const valeur = depart + (cible - depart) * (1 - Math.pow(1 - t, 3));
+    element.textContent = valeur.toFixed(2).replace(".", ",");
+    if (t < 1) {
+      requestAnimationFrame(pas);
+    }
+  }
+  requestAnimationFrame(pas);
+}
+
+// Mode sombre
+const boutonTheme = document.getElementById("bouton-theme");
+
+function appliquerTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+  boutonTheme.textContent = theme === "dark" ? "Mode clair" : "Mode sombre";
+  dessinerGraphique();
+}
+
+appliquerTheme(document.documentElement.getAttribute("data-theme"));
+boutonTheme.addEventListener("click", function () {
+  const actuel = document.documentElement.getAttribute("data-theme");
+  appliquerTheme(actuel === "dark" ? "light" : "dark");
+});
+
+// Animation d'apparition des cartes, uniquement au chargement
+document.body.classList.add("charge");
+setTimeout(function () { document.body.classList.remove("charge"); }, 1500);
+
+// Astuces et citations, toutes les 6 secondes
+const ASTUCES = [
+  { texte: "Mets de côté dès que tu évites une dépense, pas en fin de mois : l'argent que tu vois, tu le gardes.", auteur: "Astuce" },
+  { texte: "Ne mets pas de côté ce qui reste après avoir dépensé : dépense ce qui reste après avoir mis de côté.", auteur: "Warren Buffett (citation attribuée)" },
+  { texte: "Une petite somme chaque jour pèse plus qu'un gros effort rare.", auteur: "Astuce" },
+  { texte: "Attends 48 heures avant un achat non prévu : l'envie retombe souvent d'elle-même.", auteur: "Astuce" },
+  { texte: "Prends garde aux petites dépenses : une petite fuite peut couler un grand navire.", auteur: "Benjamin Franklin" },
+  { texte: "Vérifie tes abonnements chaque trimestre : certains ne servent plus.", auteur: "Astuce" },
+  { texte: "Une habitude coûteuse arrêtée rapporte chaque jour : multiplie son prix par 365 pour voir l'effet.", auteur: "Astuce" },
+  { texte: "Un objectif précis avec une date motive bien plus qu'un vague « économiser ».", auteur: "Astuce" },
+  { texte: "Cuisiner à l'avance évite la plupart des livraisons de dernière minute.", auteur: "Astuce" },
+  { texte: "Fête chaque palier atteint par un petit plaisir gratuit : la motivation aime les récompenses.", auteur: "Astuce" },
+  { texte: "Note la dépense évitée dès que l'envie est passée : ce geste renforce l'habitude.", auteur: "Astuce" }
+];
+
+const blocAstuce = document.getElementById("astuce");
+const texteAstuce = document.getElementById("astuce-texte");
+const auteurAstuce = document.getElementById("astuce-auteur");
+let indexAstuce = Math.floor(Math.random() * ASTUCES.length);
+
+function montrerAstuce() {
+  blocAstuce.classList.add("sortie");
+  setTimeout(function () {
+    const astuce = ASTUCES[indexAstuce];
+    texteAstuce.textContent = astuce.texte;
+    auteurAstuce.textContent = astuce.auteur;
+    indexAstuce = (indexAstuce + 1) % ASTUCES.length;
+    blocAstuce.classList.remove("sortie");
+  }, 450);
+}
+
+montrerAstuce();
+setInterval(montrerAstuce, 9000);

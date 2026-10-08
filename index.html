@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Mes économies</title>
+    <script>
+    document.documentElement.setAttribute("data-theme",
+      localStorage.getItem("theme") ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+  </script>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0F3D5E">
@@ -12,7 +17,6 @@
   <meta name="apple-mobile-web-app-title" content="Économies">
 </head>
 <body>
-
   <div class="fond" aria-hidden="true">
     <svg class="vague v1" viewBox="0 0 2400 200" preserveAspectRatio="none"><path d="M0 100Q300 20 600 100T1200 100T1800 100T2400 100V200H0Z"/></svg>
     <svg class="vague v2" viewBox="0 0 2400 200" preserveAspectRatio="none"><path d="M0 100Q300 180 600 100T1200 100T1800 100T2400 100V200H0Z"/></svg>
@@ -22,57 +26,88 @@
   <header class="entete">
     <div>
       <p class="grand-total"><span id="total">0,00</span> €</p>
-      <p class="legende">A récupérer sur ton compte d'épargne</p>
+      <p class="legende">à récupérer sur ton compte d'épargne</p>
       <p class="depuis">Économisé depuis le début : <strong id="total-cumule">0,00 €</strong></p>
     </div>
-    <svg class="pot" viewBox="0 0 120 120" aria-hidden="true">
-      <rect x="32" y="16" width="56" height="12" rx="6" fill="#F4B63F"/>
-      <path d="M38 28h44v14c10 8 16 20 16 36v14a12 12 0 0 1-12 12H34a12 12 0 0 1-12-12V78c0-16 6-28 16-36z" fill="#fff" fill-opacity=".14" stroke="#fff" stroke-width="3"/>
-      <ellipse cx="60" cy="98" rx="27" ry="7" fill="#F4B63F"/>
-      <ellipse cx="60" cy="88" rx="27" ry="7" fill="#FFD36E"/>
-      <ellipse cx="60" cy="78" rx="27" ry="7" fill="#F4B63F"/>
-    </svg>
+    <div class="astuce" id="astuce">
+      <p class="astuce-texte" id="astuce-texte"></p>
+      <p class="astuce-auteur" id="astuce-auteur"></p>
+      <div class="astuce-barre"><span></span></div>
+    </div>
+    <button id="bouton-theme" class="theme">Mode sombre</button>
   </header>
 
   <main>
-    <h2>Mes défis</h2>
-    <ul id="liste-defis"></ul>
+    <section class="colonne">
+      <h2>Mes défis</h2>
+      <ul id="liste-defis"></ul>
 
-    <details class="nouveau">
-      <summary>Ajouter un défi</summary>
-      <form id="formulaire-defi">
-        <label>Nom du défi
-          <input type="text" id="nom-defi" placeholder="Ex : Paquet de cigarettes" required>
-        </label>
-        <label>Montant évité à chaque fois (€)
-          <input type="number" id="montant-defi" step="0.01" min="0" placeholder="Ex : 12.50" required>
-        </label>
-        <label>Ajout automatique tous les ... jours (0 = désactivé)
-          <input type="number" id="frequence-defi" min="0" step="1" value="0" required>
-        </label>
-        <button type="submit" class="principal">Créer le défi</button>
-      </form>
-    </details>
+      <details class="nouveau">
+        <summary>Ajouter un défi</summary>
+        <form id="formulaire-defi">
+          <div class="modeles-bloc">
+            <details id="menu-modeles">
+              <summary id="resume-modeles">Choisir des modèles (facultatif)</summary>
+              <div id="liste-modeles"></div>
+            </details>
+            <ul id="recap-modeles"></ul>
+          </div>
+          <label>Nom du défi
+            <input type="text" id="nom-defi" placeholder="Ex : Paquet de cigarettes" required>
+          </label>
+          <label>Montant évité à chaque fois (€)
+            <input type="number" id="montant-defi" step="0.01" min="0" placeholder="Ex : 12.50" required>
+          </label>
+          <label>Ajout automatique tous les ... jours (0 = désactivé)
+            <input type="number" id="frequence-defi" min="0" step="1" value="0" required>
+          </label>
+          <button type="submit" class="principal">Créer le défi</button>
+        </form>
+      </details>
+    </section>
 
-    <h2>Évolution</h2>
-    <canvas id="graphique"></canvas>
+    <section class="colonne">
+      <h2>Mes objectifs</h2>
+      <ul id="liste-objectifs"></ul>
 
-    <details id="bloc-historique">
-      <summary>Historique (<span id="nb-historique">0</span>)</summary>
-      <div class="actions-historique">
-        <button id="bouton-archiver">Archiver</button>
-        <button id="bouton-vider" class="supprimer">Supprimer l'historique</button>
-      </div>
-      <ul id="liste-historique"></ul>
-    </details>
+      <details class="nouveau">
+        <summary>Ajouter un objectif</summary>
+        <form id="formulaire-objectif">
+          <label>Nom de l'objectif
+            <input type="text" id="nom-objectif" placeholder="Ex : Voyage à Lisbonne" required>
+          </label>
+          <label>Montant à atteindre (€)
+            <input type="number" id="cible-objectif" step="0.01" min="1" placeholder="Ex : 500" required>
+          </label>
+          <label>Date limite (facultatif)
+            <input type="date" id="date-objectif">
+          </label>
+          <button type="submit" class="principal">Créer l'objectif</button>
+        </form>
+      </details>
+    </section>
 
-    <details id="bloc-archives">
-      <summary>Archives (<span id="nb-archives">0</span>)</summary>
-      <div class="actions-historique">
-        <button id="bouton-vider-archives" class="supprimer">Supprimer les archives</button>
-      </div>
-      <ul id="liste-archives"></ul>
-    </details>
+    <section class="colonne">
+      <h2>Évolution</h2>
+      <canvas id="graphique"></canvas>
+
+      <details id="bloc-historique">
+        <summary>Historique (<span id="nb-historique">0</span>)</summary>
+        <div class="actions-historique">
+          <button id="bouton-archiver">Archiver</button>
+          <button id="bouton-vider" class="supprimer">Supprimer l'historique</button>
+        </div>
+        <ul id="liste-historique"></ul>
+      </details>
+
+      <details id="bloc-archives">
+        <summary>Archives (<span id="nb-archives">0</span>)</summary>
+        <div class="actions-historique">
+          <button id="bouton-vider-archives" class="supprimer">Supprimer les archives</button>
+        </div>
+        <ul id="liste-archives"></ul>
+      </details>
+    </section>
   </main>
 
   <script src="app.js"></script>
