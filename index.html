@@ -34,7 +34,15 @@
       <p class="astuce-auteur" id="astuce-auteur"></p>
       <div class="astuce-barre"><span></span></div>
     </div>
-    <button id="bouton-theme" class="theme">Mode sombre</button>
+<div class="actions-profil">
+  <button id="bouton-profil" class="theme">
+    👤 <span id="nom-profil">Mon profil</span>
+  </button>
+
+  <button id="bouton-theme" class="theme">
+    Mode sombre
+  </button>
+</div>
   </header>
 
   <main>
@@ -109,6 +117,39 @@
       </details>
     </section>
   </main>
+
+<div id="fenetre-profils" class="fenetre-profils" hidden>
+  <div class="profil-panneau">
+
+    <div class="profil-entete">
+      <h2>Mes profils</h2>
+      <button id="fermer-profils" aria-label="Fermer">×</button>
+    </div>
+
+    <div id="liste-profils"></div>
+
+    <form id="formulaire-profil" class="formulaire-profil">
+      <label>
+        Nouveau profil
+        <input
+          type="text"
+          id="nom-nouveau-profil"
+          placeholder="Ex : Marie"
+          maxlength="40"
+          required
+        >
+      </label>
+
+      <button type="submit" class="principal">
+        Créer le profil
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<script src="profil.js"></script>
+<script src="app.js"></script>
 
   <script src="app.js"></script>
 </body>
