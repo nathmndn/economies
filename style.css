@@ -274,26 +274,54 @@ select {
 #recap-modeles li { border-top: none; padding: 2px 0; }
 #recap-modeles li.total { font-weight: 700; color: var(--gain); }
 
-/* Version PC : tableau de bord plein écran en trois colonnes */
+
+/* Version PC : trois colonnes, avec défilement de toute la page */
 @media (min-width: 900px) {
-  html, body { height: 100%; }
-  body { display: flex; flex-direction: column; overflow: hidden; }
-  .entete { flex: none; padding: 18px 32px 22px; border-radius: 0 0 28px 28px; }
-  .grand-total { font-size: 2.8rem; }
-  .pot { width: 72px; height: 72px; }
+  html, body {
+    height: auto;
+    min-height: 100%;
+  }
+
+  body {
+    display: block;
+    overflow: visible;
+  }
+
+  .entete {
+    padding: 18px 32px 22px;
+    border-radius: 0 0 28px 28px;
+  }
+
+  .grand-total {
+    font-size: 2.8rem;
+  }
+
+  .pot {
+    width: 72px;
+    height: 72px;
+  }
+
   main {
-    flex: 1;
-    min-height: 0;
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 8px 32px 24px;
+    padding: 8px 32px 40px;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 28px;
+    align-items: start;
   }
-  .colonne { min-height: 0; overflow-y: auto; padding: 0 8px 16px 0; }
-  h2 { margin-top: 16px; }
+
+  .colonne {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    padding: 8px 20px 20px;
+  }
+
+  h2 {
+    margin-top: 16px;
+  }
 }
 
 /* Couleurs et thèmes */
@@ -1051,5 +1079,177 @@ li.defi.pause .somme { color: var(--discret); }
   .epargne-concret,
   .epargne-concret-autre {
     transition: none;
+  }
+}
+
+
+/* ============================================================
+   ÉPARGNE EN CONCRET — FINITIONS VISUELLES
+   ============================================================ */
+
+/* Carte générale */
+.epargne-concret {
+  padding: 26px;
+  border-radius: 20px;
+  border-color: var(--bord-panneau);
+  box-shadow:
+    0 4px 10px rgba(15, 61, 94, 0.04),
+    0 14px 32px rgba(15, 61, 94, 0.08);
+}
+
+/* En-tête plus équilibré */
+.epargne-concret-entete {
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 22px;
+}
+
+.epargne-concret-introduction {
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.epargne-concret-montant {
+  font-size: clamp(1.9rem, 6vw, 2.5rem);
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+/* Référence principale mise en valeur */
+.epargne-concret-reference-principale {
+  padding: 18px;
+  margin-bottom: 18px;
+  background: var(--carte-verre);
+  border: 1px solid var(--bord-panneau);
+  border-radius: 14px;
+}
+
+.epargne-concret-reference-nom {
+  font-size: clamp(1.25rem, 4vw, 1.55rem);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.epargne-concret-reference-valeur {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* Exemples secondaires plus discrets */
+.epargne-concret-autres {
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.epargne-concret-autre {
+  padding: 14px;
+  border-radius: 12px;
+}
+
+.epargne-concret-autre span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.epargne-concret-autre strong {
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+/* Prochain palier clairement séparé */
+.epargne-concret-prochain {
+  padding: 16px;
+  gap: 14px;
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: 12px;
+}
+
+.epargne-concret-prochain-valeur {
+  font-size: 1.3rem;
+}
+
+.epargne-concret-prochain-message {
+  line-height: 1.5;
+}
+
+/* Adaptation aux petits écrans */
+@media (max-width: 650px) {
+  .epargne-concret {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .epargne-concret-entete {
+    gap: 10px;
+  }
+
+  .epargne-concret-montant {
+    font-size: 2.3rem;
+  }
+
+  .epargne-concret-reference-principale {
+    padding: 16px;
+  }
+
+  .epargne-concret-prochain {
+    padding: 14px;
+  }
+}
+
+/* Respect du thème sombre */
+:root[data-theme="dark"] .epargne-concret {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.18),
+    0 14px 32px rgba(0, 0, 0, 0.16);
+}
+
+/* Respect des préférences d'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .epargne-concret-reference-principale {
+    animation: none;
+  }
+}
+
+
+/* Animation discrète lors du franchissement d'un palier */
+
+/* Animation plus ample lors du franchissement d'un palier */
+.epargne-concret-prochain.palier-franchi {
+  animation: animation-palier 1.5s ease-in-out;
+  transform-origin: center;
+}
+
+@keyframes animation-palier {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(194, 151, 67, 0);
+  }
+
+  20% {
+    transform: scale(1.07);
+    box-shadow: 0 0 30px rgba(194, 151, 67, 0.35);
+  }
+
+  40% {
+    transform: scale(1.035);
+    box-shadow: 0 0 22px rgba(194, 151, 67, 0.25);
+  }
+
+  65% {
+    transform: scale(1.06);
+    box-shadow: 0 0 28px rgba(194, 151, 67, 0.3);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(194, 151, 67, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .epargne-concret-prochain.palier-franchi {
+    animation: none;
   }
 }

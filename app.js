@@ -121,13 +121,13 @@ const REFERENCES_ECONOMIES = [
   // ----------------------------------------------------------
 
   {
-    nom: "paquet de cigarettes",
+    nom: "Paquet de cigarettes",
     valeur: 12,
     categorie: "tabac"
   },
 
   {
-    nom: "cartouche de cigarettes",
+    nom: "Cartouche de cigarettes",
     valeur: 120,
     categorie: "tabac"
   },
@@ -138,31 +138,31 @@ const REFERENCES_ECONOMIES = [
   // ----------------------------------------------------------
 
   {
-    nom: "place de cinéma",
+    nom: "Place de cinéma",
     valeur: 12,
     categorie: "loisirs"
   },
 
   {
-    nom: "repas au restaurant",
+    nom: "Repas au restaurant",
     valeur: 30,
     categorie: "loisirs"
   },
 
   {
-    nom: "place de concert",
+    nom: "Place de concert",
     valeur: 50,
     categorie: "loisirs"
   },
 
   {
-    nom: "jeu vidéo",
+    nom: "Jeu vidéo",
     valeur: 80,
     categorie: "loisirs"
   },
 
   {
-    nom: "activité de loisir",
+    nom: "Activité de loisir",
     valeur: 50,
     categorie: "loisirs"
   },
@@ -173,25 +173,25 @@ const REFERENCES_ECONOMIES = [
   // ----------------------------------------------------------
 
   {
-    nom: "livre",
+    nom: "Livre",
     valeur: 20,
     categorie: "objets"
   },
 
   {
-    nom: "paire de chaussures",
+    nom: "Paire de chaussures",
     valeur: 100,
     categorie: "objets"
   },
 
   {
-    nom: "casque audio",
+    nom: "Casque audio",
     valeur: 150,
     categorie: "objets"
   },
 
   {
-    nom: "petit appareil électronique",
+    nom: "Petit appareil électronique",
     valeur: 250,
     categorie: "objets"
   },
@@ -202,25 +202,25 @@ const REFERENCES_ECONOMIES = [
   // ----------------------------------------------------------
 
   {
-    nom: "massage ou soin",
+    nom: "Massage ou soin",
     valeur: 70,
     categorie: "experiences"
   },
 
   {
-    nom: "activité sportive",
+    nom: "Activité sportive",
     valeur: 100,
     categorie: "experiences"
   },
 
   {
-    nom: "saut en parapente",
+    nom: "Saut en parapente",
     valeur: 200,
     categorie: "experiences"
   },
 
   {
-    nom: "journée dans un parc de loisirs",
+    nom: "Journée dans un parc de loisirs",
     valeur: 80,
     categorie: "experiences"
   },
@@ -231,31 +231,31 @@ const REFERENCES_ECONOMIES = [
   // ----------------------------------------------------------
 
   {
-    nom: "trajet en train",
+    nom: "Trajet en train",
     valeur: 50,
     categorie: "voyage"
   },
 
   {
-    nom: "nuit dans un hôtel",
+    nom: "Nuit dans un hôtel",
     valeur: 100,
     categorie: "voyage"
   },
 
   {
-    nom: "week-end",
+    nom: "Week-end",
     valeur: 300,
     categorie: "voyage"
   },
 
   {
-    nom: "séjour",
+    nom: "Séjour",
     valeur: 500,
     categorie: "voyage"
   },
 
   {
-    nom: "voyage",
+    nom: "Voyage",
     valeur: 1000,
     categorie: "voyage"
   },
@@ -266,19 +266,19 @@ const REFERENCES_ECONOMIES = [
   // ----------------------------------------------------------
 
   {
-    nom: "petit équipement pour la maison",
+    nom: "Petit équipement pour la maison",
     valeur: 50,
     categorie: "maison"
   },
 
   {
-    nom: "équipement pour la maison",
+    nom: "Equipement pour la maison",
     valeur: 150,
     categorie: "maison"
   },
 
   {
-    nom: "meuble",
+    nom: "Meuble",
     valeur: 300,
     categorie: "maison"
   }
@@ -808,171 +808,304 @@ function afficherTotalCumule() {
 }
 
 function afficherEpargneConcret() {
-
   let somme = 0;
 
   Object.keys(economiesParJour).forEach(function (cle) {
-    somme += economiesParJour[cle];
+    somme += Number(economiesParJour[cle]) || 0;
   });
 
-  somme = arrondir(somme);
 
-  epargneConcretMontant.textContent =
-    formaterMontant(somme);
+somme = arrondir(somme);
 
+// Détecter le franchissement d'un nouveau palier.
+const ancienTotal = dernierTotalEpargneConcret;
+
+const referencesPaliers = REFERENCES_ECONOMIES.filter(
+  function (reference) {
+    return (
+      reference.categorie !== "tabac" &&
+      reference.valeur > 0
+    );
+  }
+);
+
+let palierFranchi = false;
+
+if (ancienTotal !== null && somme > ancienTotal) {
+  palierFranchi = referencesPaliers.some(
+    function (reference) {
+      return (
+        reference.valeur > ancienTotal &&
+        reference.valeur <= somme
+      );
+    }
+  );
+
+  const valeursPaliers = referencesPaliers.map(
+    function (reference) {
+      return reference.valeur;
+    }
+  );
+
+  const dernierPalierReference = Math.max(
+    ...valeursPaliers
+  );
+
+  // Au-delà de la dernière référence, utiliser des paliers de 100 €.
+  if (
+    ancienTotal >= dernierPalierReference &&
+    Math.floor(ancienTotal / 100) <
+      Math.floor(somme / 100)
+  ) {
+    palierFranchi = true;
+  }
+}
+
+dernierTotalEpargneConcret = somme;
+
+if (palierFranchi) {
+  const zonePalier = document.querySelector(
+    ".epargne-concret-prochain"
+  );
+
+  if (zonePalier) {
+    zonePalier.classList.remove("palier-franchi");
+    void zonePalier.offsetWidth;
+    zonePalier.classList.add("palier-franchi");
+  }
+}
+
+epargneConcretMontant.textContent =
+  formaterMontant(somme);
+
+  // Aucune économie enregistrée
   if (somme <= 0) {
-
     epargneConcretMessage.textContent =
-      "Commencez à économiser pour voir votre effort prendre forme.";
+      "Ce que représente votre effort :";
 
     epargneConcretReferenceNom.textContent =
-      "Votre première référence apparaîtra ici";
+      "Vos premières économies apparaîtront ici";
 
     epargneConcretReferenceValeur.textContent =
-      "";
+      "Chaque somme économisée compte.";
 
-    epargneConcretAutre1Nom.textContent =
-      "—";
+    epargneConcretAutre1Nom.textContent = "—";
+    epargneConcretAutre1Valeur.textContent = "";
+    epargneConcretAutre2Nom.textContent = "—";
+    epargneConcretAutre2Valeur.textContent = "";
 
-    epargneConcretAutre1Valeur.textContent =
-      "";
-
-    epargneConcretAutre2Nom.textContent =
-      "—";
-
-    epargneConcretAutre2Valeur.textContent =
-      "";
-
-    epargneConcretProchainValeur.textContent =
-      "—";
-
+    epargneConcretProchainValeur.textContent = "—";
     epargneConcretProchainMessage.textContent =
-      "";
+      "Votre prochain palier apparaîtra ici.";
 
     return;
   }
 
-  const referencesGenerales =
-    REFERENCES_ECONOMIES.filter(function (reference) {
-      return reference.categorie !== "tabac";
+  epargneConcretMessage.textContent =
+    "Ce que représente votre effort :";
+
+  // Exclure le tabac des exemples généraux.
+  const references = REFERENCES_ECONOMIES
+    .filter(function (reference) {
+      return (
+        reference.categorie !== "tabac" &&
+        reference.valeur > 0
+      );
+    })
+    .slice()
+    .sort(function (a, b) {
+      return a.valeur - b.valeur;
     });
 
-  const referencesClassees =
-    referencesGenerales
-      .map(function (reference) {
-        return {
-          reference: reference,
-          ecart: Math.abs(
-            somme - reference.valeur
-          )
-        };
-      })
-      .sort(function (a, b) {
-        return a.ecart - b.ecart;
-      })
-      .map(function (element) {
-        return element.reference;
-      });
-
-  const referencePrincipale =
-    referencesClassees[0];
-
-  const autresReferences =
-    referencesClassees.slice(1, 3);
-
-  if (referencePrincipale) {
-
+  if (references.length === 0) {
     epargneConcretReferenceNom.textContent =
-      referencePrincipale.nom;
+      "Votre épargne grandit";
 
     epargneConcretReferenceValeur.textContent =
-      "Valeur indicative : " +
-      formaterMontant(
-        referencePrincipale.valeur
-      );
+      "De nouvelles comparaisons seront bientôt disponibles.";
+
+    epargneConcretAutre1Nom.textContent = "—";
+    epargneConcretAutre1Valeur.textContent = "";
+    epargneConcretAutre2Nom.textContent = "—";
+    epargneConcretAutre2Valeur.textContent = "";
+    epargneConcretProchainValeur.textContent = "—";
+    epargneConcretProchainMessage.textContent = "";
+
+    return;
   }
+
+  // Adapter le nom au pluriel pour conserver une formulation naturelle.
+  function nomAvecQuantite(reference, quantite) {
+    const nomsPluriels = {
+      "Place de cinéma": "places de cinéma",
+      "Repas au restaurant": "repas au restaurant",
+      "Place de concert": "places de concert",
+      "Jeu vidéo": "jeux vidéo",
+      "Activité de loisir": "activités de loisir",
+      "Livre": "livres",
+      "Paire de chaussures": "paires de chaussures",
+      "Casque audio": "casques audio",
+      "Petit appareil électronique": "petits appareils électroniques",
+      "Massage ou soin": "massages ou soins",
+      "Activité sportive": "activités sportives",
+      "Saut en parapente": "sauts en parapente",
+      "Journée dans un parc de loisirs": "journées dans un parc de loisirs",
+      "Trajet en train": "trajets en train",
+      "Nuit dans un hôtel": "nuits dans un hôtel",
+      "Week-end": "week-ends",
+      "Séjour": "séjours",
+      "Voyage": "voyages",
+      "Petit équipement pour la maison": "petits équipements pour la maison",
+      "Equipement pour la maison": "équipements pour la maison",
+      "Meuble": "meubles"
+    };
+
+    if (quantite === 1) {
+      return reference.nom;
+    }
+
+    return nomsPluriels[reference.nom] ||
+      reference.nom.toLowerCase() + "s";
+  }
+
+  // Choisir la référence principale la plus élevée déjà atteinte.
+  const referencesAtteintes = references.filter(
+    function (reference) {
+      return reference.valeur <= somme;
+    }
+  );
+
+  const principale = referencesAtteintes.length > 0
+    ? referencesAtteintes[referencesAtteintes.length - 1]
+    : references[0];
+
+  const quantitePrincipale =
+    Math.floor(somme / principale.valeur);
+
+  if (somme < principale.valeur) {
+    epargneConcretReferenceNom.textContent =
+      "Presque " + principale.nom.toLowerCase();
+
+    epargneConcretReferenceValeur.textContent =
+      "À partir d'environ " +
+      formaterMontant(principale.valeur) +
+      " — il manque " +
+      formaterMontant(principale.valeur - somme) +
+      ".";
+  } else {
+    epargneConcretReferenceNom.textContent =
+      quantitePrincipale + " " +
+      nomAvecQuantite(principale, quantitePrincipale);
+
+    epargneConcretReferenceValeur.textContent =
+      "À titre indicatif : environ " +
+      formaterMontant(principale.valeur) +
+      " par référence.";
+  }
+
+  // Privilégier des exemples secondaires de catégories différentes.
+  const autresPossibles = references
+    .filter(function (reference) {
+      return reference !== principale;
+    })
+    .sort(function (a, b) {
+      return Math.abs(somme - a.valeur) -
+        Math.abs(somme - b.valeur);
+    });
+
+  const autres = [];
+  const categoriesChoisies = [principale.categorie];
+
+  autresPossibles.forEach(function (reference) {
+    if (
+      autres.length < 2 &&
+      !categoriesChoisies.includes(reference.categorie)
+    ) {
+      autres.push(reference);
+      categoriesChoisies.push(reference.categorie);
+    }
+  });
+
+  // Si nécessaire, compléter avec les meilleures références disponibles.
+  autresPossibles.forEach(function (reference) {
+    if (autres.length < 2 && !autres.includes(reference)) {
+      autres.push(reference);
+    }
+  });
 
   function afficherAutreReference(
     reference,
     elementNom,
     elementValeur
   ) {
-
     if (!reference) {
       elementNom.textContent = "—";
       elementValeur.textContent = "";
       return;
     }
 
-    elementNom.textContent =
-      reference.nom;
+    const quantite = Math.floor(somme / reference.valeur);
 
-    const quantite =
-      Math.floor(
-        somme / reference.valeur
-      );
+    elementNom.textContent = reference.nom;
 
     if (quantite >= 1) {
       elementValeur.textContent =
-        "≈ " +
-        quantite +
-        " fois";
+        quantite + " " +
+        nomAvecQuantite(reference, quantite) +
+        " à titre indicatif.";
     } else {
       elementValeur.textContent =
-        "≈ " +
-        formaterMontant(
-          reference.valeur
-        );
+        "Repère indicatif : " +
+        formaterMontant(reference.valeur) +
+        " — encore " +
+        formaterMontant(reference.valeur - somme) +
+        " pour atteindre ce montant.";
     }
   }
 
   afficherAutreReference(
-    autresReferences[0],
+    autres[0],
     epargneConcretAutre1Nom,
     epargneConcretAutre1Valeur
   );
 
   afficherAutreReference(
-    autresReferences[1],
+    autres[1],
     epargneConcretAutre2Nom,
     epargneConcretAutre2Valeur
   );
 
-  const prochaine =
-    referencesGenerales
-      .filter(function (reference) {
-        return reference.valeur > somme;
-      })
-      .sort(function (a, b) {
-        return a.valeur - b.valeur;
-      })[0];
+  // Trouver le prochain montant de référence supérieur à l'épargne.
+  const prochaine = references.find(
+    function (reference) {
+      return reference.valeur > somme;
+    }
+  );
 
   if (prochaine) {
-
-    const reste =
-      arrondir(
-        prochaine.valeur - somme
-      );
+    const reste = arrondir(prochaine.valeur - somme);
 
     epargneConcretProchainValeur.textContent =
-      formaterMontant(
-        prochaine.valeur
-      );
+      formaterMontant(prochaine.valeur);
+
+    epargneConcretProchainMessage.textContent =
+      "Encore " + formaterMontant(reste) +
+      " pour atteindre ce repère.";
+  } else {
+    const prochainPalier =
+      (Math.floor(somme / 100) + 1) * 100;
+
+    epargneConcretProchainValeur.textContent =
+      formaterMontant(prochainPalier);
 
     epargneConcretProchainMessage.textContent =
       "Encore " +
-      formaterMontant(reste) +
-      " pour atteindre ce nouveau palier.";
-
-  } else {
-
-    epargneConcretProchainValeur.textContent =
-      "Au-delà de 1 000 €";
-
-    epargneConcretProchainMessage.textContent =
-      "Votre épargne dépasse déjà toutes nos références actuelles.";
+      formaterMontant(prochainPalier - somme) +
+      " pour atteindre ce prochain palier.";
   }
 }
+
+let dernierTotalEpargneConcret = null;
 
 // 7. Affichage de l'historique et des archives
 function dessinerOperations(conteneur, operations) {
